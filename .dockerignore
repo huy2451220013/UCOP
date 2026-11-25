@@ -1,0 +1,6 @@
+target/
+.git/
+BaoCao_Word/
+*.md
+*.bat
+*.sql
