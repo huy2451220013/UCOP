@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Báo cáo & Dashboard Chart.js')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container my-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="bi bi-bar-chart-line-fill text-primary me-2"></i>SV5: Báo cáo Thống kê &amp; Dashboard Điều hành (Chart.js)</h4>
+            <small class="text-muted">Tổng hợp dữ liệu thời gian thực từ SQL Server: Doanh thu ngày/tháng/phương thức, Top bán chạy, Tồn kho &amp; Tỷ lệ Hủy/Hoàn</small>
+        </div>
+        <button onclick="window.print()" class="btn btn-outline-dark btn-sm no-print">
+            <i class="bi bi-printer me-1"></i>In Báo cáo
+        </button>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card border-start border-4 border-primary h-100">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase fw-semibold">Tổng Doanh thu Thực thu</div>
+                    <div class="fs-4 fw-bold text-primary mt-1"
+                         th:text="${#numbers.formatDecimal(dashboard.totalRevenue, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</div>
+                    <small class="text-muted" th:text="${dashboard.paidOrDeliveredOrders + ' đơn đã thanh toán'}"></small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-start border-4 border-success h-100">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase fw-semibold">Tổng số Đơn hàng</div>
+                    <div class="fs-4 fw-bold text-success mt-1" th:text="${dashboard.totalOrders}">0</div>
+                    <small class="text-muted" th:text="${dashboard.totalCustomers + ' khách hàng trên hệ thống'}"></small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-start border-4 border-danger h-100">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase fw-semibold">Tỷ lệ Hủy / Hoàn tiền</div>
+                    <div class="fs-4 fw-bold text-danger mt-1" th:text="${dashboard.cancelRefundRate + '%'}">0%</div>
+                    <small class="text-muted" th:text="${dashboard.canceledOrRefundedOrders + ' đơn hủy/hoàn • ' + dashboard.pendingRefundCount + ' chờ duyệt'}"></small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-start border-4 border-warning h-100">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase fw-semibold">Cảnh báo Tồn kho thấp</div>
+                    <div class="fs-4 fw-bold text-warning mt-1" th:text="${dashboard.lowStockCount + ' mặt hàng'}">0</div>
+                    <a th:href="@{/stock}" class="small text-decoration-none">Kiểm tra kho ngay &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1: Daily Revenue & Monthly Revenue -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header py-3">Doanh thu 7 ngày gần nhất (VNĐ)</div>
+                <div class="card-body">
+                    <canvas id="dailyChart" height="125"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-header py-3">Doanh thu theo Tháng (6 tháng gần nhất)</div>
+                <div class="card-body">
+                    <canvas id="monthlyChart" height="175"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2: Payment Method & Order Status -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header py-3">Cơ cấu Doanh thu theo Phương thức Thanh toán</div>
+                <div class="card-body">
+                    <canvas id="methodChart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header py-3">Phân bố Trạng thái Đơn hàng</div>
+                <div class="card-body">
+                    <canvas id="statusChart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables Row: Top Selling Items & Warehouse Summary -->
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header py-3">
+                    <i class="bi bi-trophy-fill text-warning me-2"></i>Top Sản phẩm &amp; Gói Dịch vụ Bán chạy nhất
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>SKU / Tên</th>
+                            <th>Loại</th>
+                            <th class="text-center">SL bán</th>
+                            <th class="text-end">Doanh thu mang lại</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="row, st : ${dashboard.topSellingItems}">
+                            <td class="fw-bold" th:text="${st.count}">1</td>
+                            <td>
+                                <div class="fw-semibold" th:text="${row['name']}">Tên</div>
+                                <code th:text="${row['sku']}">SKU</code>
+                            </td>
+                            <td>
+                                <span class="badge"
+                                      th:classappend="${row['itemType'].toString() == 'PHYSICAL' ? 'badge-physical' : 'badge-service'}"
+                                      th:text="${row['itemType']}"></span>
+                            </td>
+                            <td class="text-center fw-bold" th:text="${row['totalQty']}">0</td>
+                            <td class="text-end fw-bold text-primary"
+                                th:text="${#numbers.formatDecimal(row['totalRevenue'], 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                        </tr>
+                        <tr th:if="${dashboard.topSellingItems.isEmpty()}">
+                            <td colspan="5" class="text-center py-3 text-muted">Chưa có dữ liệu bán hàng.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-header py-3">
+                    <i class="bi bi-boxes text-info me-2"></i>Tổng hợp Tồn kho theo Kho hàng
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Kho hàng</th>
+                            <th class="text-center">Số SKU</th>
+                            <th class="text-center">OnHand</th>
+                            <th class="text-center">Reserved</th>
+                            <th class="text-center">Low Stock</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="wh : ${dashboard.warehouseStockSummary}">
+                            <td>
+                                <strong th:text="${wh['code']}">WH</strong>
+                                <div class="text-muted" th:text="${wh['name']}">Tên kho</div>
+                            </td>
+                            <td class="text-center" th:text="${wh['skuCount']}">0</td>
+                            <td class="text-center fw-bold" th:text="${wh['totalOnHand']}">0</td>
+                            <td class="text-center text-primary" th:text="${wh['totalReserved']}">0</td>
+                            <td class="text-center">
+                                <span th:if="${wh['lowCount'] > 0}" class="badge bg-danger" th:text="${wh['lowCount']}"></span>
+                                <span th:if="${wh['lowCount'] == 0}" class="badge bg-success">0</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script th:inline="javascript">
+    const dailyLabels = /*[[${dashboard.dailyLabels}]]*/ [];
+    const dailyData = /*[[${dashboard.dailyRevenue}]]*/ [];
+
+    const monthlyLabels = /*[[${dashboard.monthlyLabels}]]*/ [];
+    const monthlyData = /*[[${dashboard.monthlyRevenue}]]*/ [];
+
+    const methodLabels = /*[[${dashboard.methodLabels}]]*/ [];
+    const methodData = /*[[${dashboard.methodRevenue}]]*/ [];
+
+    const statusLabels = /*[[${dashboard.statusLabels}]]*/ [];
+    const statusData = /*[[${dashboard.statusCounts}]]*/ [];
+
+    new Chart(document.getElementById('dailyChart'), {
+        type: 'line',
+        data: {
+            labels: dailyLabels,
+            datasets: [{
+                label: 'Doanh thu ngày (VNĐ)',
+                data: dailyData,
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.15)',
+                fill: true,
+                tension: 0.35
+            }]
+        },
+        options: { responsive: true }
+    });
+
+    new Chart(document.getElementById('monthlyChart'), {
+        type: 'bar',
+        data: {
+            labels: monthlyLabels,
+            datasets: [{
+                label: 'Doanh thu tháng (VNĐ)',
+                data: monthlyData,
+                backgroundColor: '#0ea5e9',
+                borderRadius: 6
+            }]
+        },
+        options: { responsive: true }
+    });
+
+    new Chart(document.getElementById('methodChart'), {
+        type: 'doughnut',
+        data: {
+            labels: methodLabels,
+            datasets: [{
+                data: methodData,
+                backgroundColor: ['#f59e0b', '#2563eb', '#8b5cf6', '#10b981']
+            }]
+        },
+        options: { responsive: true }
+    });
+
+    new Chart(document.getElementById('statusChart'), {
+        type: 'pie',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                data: statusData,
+                backgroundColor: ['#3b82f6', '#10b981', '#eab308', '#ef4444']
+            }]
+        },
+        options: { responsive: true }
+    });
+</script>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

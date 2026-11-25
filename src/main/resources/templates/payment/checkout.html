@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Thanh toán Đơn hàng ' + ${order.orderCode})}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container my-4">
+    <div class="mb-3">
+        <a th:href="@{/orders/detail/{id}(id=${order.id})}" class="text-decoration-none small">&larr; Quay lại Đơn hàng</a>
+        <h4 class="fw-bold mb-0 mt-1">
+            <i class="bi bi-credit-card-2-front text-primary me-2"></i>SV4: Thanh toán Đơn hàng
+            <span class="font-monospace text-primary" th:text="${order.orderCode}"></span>
+        </h4>
+    </div>
+
+    <div class="row g-4">
+        <!-- Payment Method Selection -->
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header py-3">Chọn Phương thức Thanh toán &amp; Sử dụng Ví UCOP</div>
+                <div class="card-body">
+                    <form id="previewForm" th:action="@{/payment/checkout/{id}(id=${order.id})}" method="get" class="mb-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Phương thức thanh toán chính:</label>
+                            <div class="list-group">
+                                <label class="list-group-item d-flex gap-3 align-items-center" th:each="m : ${methods}">
+                                    <input class="form-check-input flex-shrink-0" type="radio" name="method"
+                                           th:value="${m}" th:checked="${selectedMethod == m}"
+                                           onchange="document.getElementById('previewForm').submit();">
+                                    <div>
+                                        <div class="fw-bold" th:text="${m}">METHOD</div>
+                                        <small class="text-muted" th:if="${m.name() == 'COD'}">Thanh toán tiền mặt khi nhận hàng (+15,000 ₫ phí thu hộ COD cho hàng vật lý)</small>
+                                        <small class="text-muted" th:if="${m.name() == 'BANK_TRANSFER'}">Chuyển khoản ngân hàng QR 24/7 (Miễn phí giao dịch)</small>
+                                        <small class="text-muted" th:if="${m.name() == 'GATEWAY'}">Cổng thanh toán thẻ Quốc tế / VNPay (+1.5% phí xử lý cổng)</small>
+                                        <small class="text-muted" th:if="${m.name() == 'WALLET'}">Thanh toán 100% bằng số dư Ví điện tử nội bộ UCOP</small>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">
+                                    <i class="bi bi-wallet2 text-success me-1"></i>Số dư Ví UCOP khả dụng:
+                                    <strong class="text-success"
+                                            th:text="${#numbers.formatDecimal(calc.walletBalance, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></strong>
+                                </div>
+                                <small class="text-muted">Có thể kết hợp trừ Ví UCOP trước, phần thiếu còn lại trả qua phương thức đã chọn</small>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="useWallet" value="true" id="useWalletSwitch"
+                                       th:checked="${useWallet or selectedMethod.name() == 'WALLET'}"
+                                       onchange="document.getElementById('previewForm').submit();">
+                                <label class="form-check-label small fw-semibold" for="useWalletSwitch">Dùng Ví</label>
+                            </div>
+                        </div>
+                    </form>
+
+                    <form th:action="@{/payment/process}" method="post">
+                        <input type="hidden" name="orderId" th:value="${order.id}">
+                        <input type="hidden" name="method" th:value="${selectedMethod}">
+                        <input type="hidden" name="useWallet" th:value="${useWallet}">
+                        <button type="submit" class="btn btn-success btn-lg w-100 fw-bold">
+                            <i class="bi bi-shield-check me-2"></i>Xác nhận Thanh toán (@Transactional)
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Calculation Breakdown -->
+        <div class="col-lg-5">
+            <div class="card border-primary border-top border-4">
+                <div class="card-header py-3">Bảng tính Chi tiết Phí &amp; Thuế (Tự động)</div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">1. Tạm tính (Subtotal):</span>
+                        <span th:text="${#numbers.formatDecimal(calc.subtotal, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>2. Giảm giá sản phẩm (Item-level):</span>
+                        <span th:text="'-' + ${#numbers.formatDecimal(calc.itemDiscount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>3. Giảm giá giỏ hàng (Cart-level):</span>
+                        <span th:text="'-' + ${#numbers.formatDecimal(calc.cartDiscount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">4. Thuế VAT (10% sau giảm giá):</span>
+                        <span th:text="${#numbers.formatDecimal(calc.taxAmount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">5. Phí vận chuyển (Weight-based):</span>
+                        <span th:text="${#numbers.formatDecimal(calc.shippingFee, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">6. Phí thu hộ COD (CODFee):</span>
+                        <span th:text="${#numbers.formatDecimal(calc.codFee, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">7. Phí cổng thanh toán (Gateway 1.5%):</span>
+                        <span th:text="${#numbers.formatDecimal(calc.gatewayFee, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold fs-6 mb-2">
+                        <span>Tổng cộng (GrandTotal):</span>
+                        <span th:text="${#numbers.formatDecimal(calc.grandTotal, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <div class="d-flex justify-content-between text-success mb-2">
+                        <span>Khấu trừ từ Ví UCOP:</span>
+                        <span th:text="'-' + ${#numbers.formatDecimal(calc.walletUsed, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <div class="p-3 bg-primary bg-opacity-10 rounded-3 d-flex justify-content-between align-items-center mt-3">
+                        <span class="fw-bold text-dark">Số tiền cần trả (AmountDue):</span>
+                        <span class="fw-bold fs-4 text-primary"
+                              th:text="${#numbers.formatDecimal(calc.amountDue, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

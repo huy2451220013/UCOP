@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Quản lý Duyệt Hoàn tiền Refund')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container my-4">
+    <h4 class="fw-bold mb-1"><i class="bi bi-arrow-counterclockwise text-danger me-2"></i>SV4: Quản lý Yêu cầu Hoàn tiền (Full &amp; Partial Refund)</h4>
+    <p class="text-muted small mb-4">Khi Nhân viên/Admin bấm <strong>Duyệt</strong>, hệ thống tự động cộng số tiền hoàn vào <strong>Ví UCOP</strong> của khách hàng (@Transactional)</p>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Đơn hàng / Khách</th>
+                    <th>Loại hoàn</th>
+                    <th>Số tiền hoàn</th>
+                    <th>Lý do</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end">Xử lý</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="rf : ${refunds}">
+                    <td th:text="${rf.id}">1</td>
+                    <td>
+                        <a th:href="@{/orders/detail/{id}(id=${rf.order.id})}" class="fw-bold font-monospace" th:text="${rf.order.orderCode}">ORD</a>
+                        <div class="text-muted" th:text="${rf.order.account.username}">user</div>
+                    </td>
+                    <td><span class="badge bg-secondary" th:text="${rf.refundType}">FULL</span></td>
+                    <td class="fw-bold text-danger" th:text="${#numbers.formatDecimal(rf.amount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                    <td th:text="${rf.reason}">Lý do</td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${rf.status == 'APPROVED' ? 'bg-success' : (rf.status == 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark')}"
+                              th:text="${rf.status}"></span>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <th:block th:if="${rf.status == 'PENDING'}">
+                            <form th:action="@{/payment/refund/{id}/process(id=${rf.id})}" method="post" class="d-inline">
+                                <input type="hidden" name="approve" value="true">
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="bi bi-check-lg"></i> Duyệt &amp; Hoàn Ví
+                                </button>
+                            </form>
+                            <form th:action="@{/payment/refund/{id}/process(id=${rf.id})}" method="post" class="d-inline">
+                                <input type="hidden" name="approve" value="false">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-x-lg"></i> Từ chối
+                                </button>
+                            </form>
+                        </th:block>
+                        <small th:if="${rf.status != 'PENDING'}" class="text-muted"
+                               th:text="${'Xử lý bởi ' + rf.processedBy}"></small>
+                    </td>
+                </tr>
+                <tr th:if="${refunds.isEmpty()}">
+                    <td colspan="7" class="text-center py-4 text-muted">Chưa có yêu cầu hoàn tiền nào.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

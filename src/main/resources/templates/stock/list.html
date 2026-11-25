@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Quản lý Kho & Tồn kho Low Stock')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="bi bi-boxes text-primary me-2"></i>SV2: Quản lý Đa Kho hàng &amp; Tồn kho (StockItem)</h4>
+            <small class="text-muted">Quan hệ 1-N (Warehouse &rarr; StockItem), theo dõi OnHand / Reserved / Available &amp; Cảnh báo Low Stock tự động</small>
+        </div>
+    </div>
+
+    <!-- Automatic Low Stock Warning Banner -->
+    <div th:if="${lowStockItems != null and !lowStockItems.isEmpty()}"
+         class="alert alert-warning border-start border-4 border-danger shadow-sm mb-4">
+        <div class="fw-bold text-danger mb-1">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>CẢNH BÁO TỒN KHO THẤP (LOW STOCK ALERT):
+            Có <span th:text="${lowStockItems.size()}"></span> mặt hàng chạm/dưới ngưỡng an toàn!
+        </div>
+        <div class="small">
+            <span th:each="ls, st : ${lowStockItems}">
+                <strong th:text="${ls.item.name}"></strong> (<span th:text="${ls.warehouse.code}"></span>:
+                khả dụng <strong class="text-danger" th:text="${ls.available}"></strong> &le; ngưỡng <span th:text="${ls.lowStockThreshold}"></span>)<span th:if="${!st.last}">; </span>
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Adjust Stock Form -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header py-3">
+                    <i class="bi bi-sliders text-primary me-2"></i>Nhập / Xuất điều chỉnh Tồn kho (OnHand)
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/stock/adjust}" method="post" class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Kho hàng *</label>
+                            <select name="warehouseId" class="form-select form-select-sm" required>
+                                <option th:each="w : ${warehouses}" th:value="${w.id}" th:text="${w.code + ' - ' + w.name}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Sản phẩm vật lý *</label>
+                            <select name="itemId" class="form-select form-select-sm" required>
+                                <option th:each="it : ${physicalItems}" th:value="${it.id}" th:text="${it.sku + ' - ' + it.name}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Số lượng tăng/giảm (+/-) *</label>
+                            <input type="number" name="deltaOnHand" value="10" class="form-control form-control-sm" required>
+                            <div class="form-text small">Nhập số dương để nhập kho, số âm để xuất hủy</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Ngưỡng cảnh báo (Low Stock Threshold)</label>
+                            <input type="number" name="lowStockThreshold" value="5" min="0" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-12 mt-2">
+                            <button type="submit" class="btn btn-primary btn-sm px-4">
+                                <i class="bi bi-check2-circle me-1"></i>Cập nhật Tồn kho (Ghi Audit Log)
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Warehouse Form -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header py-3">
+                    <i class="bi bi-building-add text-success me-2"></i>Thêm Kho hàng mới (Warehouse)
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/stock/warehouse/save}" method="post" class="row g-2">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Mã kho *</label>
+                            <input type="text" name="code" class="form-control form-control-sm" placeholder="WH-DN" required>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label small fw-semibold">Tên kho hàng *</label>
+                            <input type="text" name="name" class="form-control form-control-sm" placeholder="Kho Trung tâm Đà Nẵng" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Địa chỉ kho</label>
+                            <input type="text" name="location" class="form-control form-control-sm" placeholder="Quận Hải Châu, Đà Nẵng">
+                        </div>
+                        <div class="col-12 mt-2">
+                            <button type="submit" class="btn btn-success btn-sm px-4">
+                                <i class="bi bi-plus-circle me-1"></i>Thêm Kho mới
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Items Table -->
+    <div class="card">
+        <div class="card-header py-3">
+            <i class="bi bi-table me-2"></i>Bảng chi tiết Tồn kho theo từng Kho hàng
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Kho hàng</th>
+                    <th>Mã SKU</th>
+                    <th>Tên Sản phẩm</th>
+                    <th class="text-center">OnHand (Thực tế)</th>
+                    <th class="text-center">Reserved (Đang giữ đơn)</th>
+                    <th class="text-center">Available (Khả dụng)</th>
+                    <th class="text-center">Ngưỡng tối thiểu</th>
+                    <th>Trạng thái Tồn kho</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="si : ${stockItems}" th:classappend="${si.lowStock ? 'table-warning' : ''}">
+                    <td>
+                        <strong th:text="${si.warehouse.code}">WH</strong>
+                        <div class="small text-muted" th:text="${si.warehouse.name}">Tên kho</div>
+                    </td>
+                    <td><code th:text="${si.item.sku}">SKU</code></td>
+                    <td class="fw-semibold" th:text="${si.item.name}">SP</td>
+                    <td class="text-center fw-bold" th:text="${si.onHand}">0</td>
+                    <td class="text-center text-primary" th:text="${si.reserved}">0</td>
+                    <td class="text-center fw-bold"
+                        th:classappend="${si.lowStock ? 'text-danger' : 'text-success'}"
+                        th:text="${si.available}">0</td>
+                    <td class="text-center text-muted" th:text="${si.lowStockThreshold}">5</td>
+                    <td>
+                        <span th:if="${si.lowStock}" class="badge bg-danger">
+                            <i class="bi bi-exclamation-circle me-1"></i>LOW STOCK (Cần nhập thêm)
+                        </span>
+                        <span th:if="${!si.lowStock}" class="badge bg-success">Đủ hàng an toàn</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

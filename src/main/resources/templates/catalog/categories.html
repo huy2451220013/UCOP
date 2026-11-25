@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Danh mục Đa cấp & Import/Export CSV')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container my-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="bi bi-diagram-3-fill text-primary me-2"></i>SV2: Danh mục Sản phẩm &amp; Dịch vụ Đa cấp</h4>
+            <small class="text-muted">Quan hệ tự tham chiếu 1-N (Danh mục Cha &rarr; Danh mục Con) &amp; Import/Export CSV</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a th:href="@{/categories/export-csv}" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-filetype-csv me-1"></i>Export Categories CSV
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Staff/Admin Form + CSV Import -->
+        <div class="col-lg-4" th:if="${isAdmin or isStaff}">
+            <div class="card mb-3">
+                <div class="card-header py-3">
+                    <i class="bi bi-folder-plus text-primary me-2"></i>
+                    <span th:text="${editCategory != null ? 'Cập nhật Danh mục #' + editCategory.id : 'Thêm Danh mục mới'}"></span>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/categories/save}" method="post">
+                        <input type="hidden" name="id" th:if="${editCategory != null}" th:value="${editCategory.id}">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Tên danh mục *</label>
+                            <input type="text" name="name" class="form-control form-control-sm"
+                                   th:value="${editCategory != null ? editCategory.name : ''}" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Danh mục Cha (Tùy chọn - Đa cấp)</label>
+                            <select name="parentId" class="form-select form-select-sm">
+                                <option value="">-- Là Danh mục Gốc (Cấp 1) --</option>
+                                <option th:each="c : ${categories}"
+                                        th:if="${editCategory == null or !c.id.equals(editCategory.id)}"
+                                        th:value="${c.id}"
+                                        th:text="${(c.parent != null ? '↳ ' : '') + c.name}"
+                                        th:selected="${editCategory != null and editCategory.parent != null and editCategory.parent.id.equals(c.id)}">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Mô tả</label>
+                            <textarea name="description" rows="2" class="form-control form-control-sm"
+                                      th:text="${editCategory != null ? editCategory.description : ''}"></textarea>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="active" value="true" id="catActive"
+                                   th:checked="${editCategory == null or editCategory.active}">
+                            <label class="form-check-label small" for="catActive">Đang hoạt động</label>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                                <i class="bi bi-save me-1"></i>Lưu Danh mục
+                            </button>
+                            <a th:if="${editCategory != null}" th:href="@{/categories}" class="btn btn-outline-secondary btn-sm">Hủy</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header py-3">
+                    <i class="bi bi-upload text-success me-2"></i>Import Danh mục từ CSV
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/categories/import-csv}" method="post" enctype="multipart/form-data">
+                        <input type="file" name="file" accept=".csv" class="form-control form-control-sm mb-2" required>
+                        <div class="text-muted small mb-2">Cột chuẩn: <code>Name, Description, ParentName, Active</code> (có thể Export CSV mẫu trước rồi chỉnh sửa).</div>
+                        <button type="submit" class="btn btn-success btn-sm w-100">
+                            <i class="bi bi-cloud-arrow-up me-1"></i>Tải lên &amp; Import CSV
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Table -->
+        <div th:class="${(isAdmin or isStaff) ? 'col-lg-8' : 'col-12'}">
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên Danh mục</th>
+                            <th>Danh mục Cha</th>
+                            <th>Mô tả</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="cat : ${categories}">
+                            <td th:text="${cat.id}">1</td>
+                            <td>
+                                <span th:if="${cat.parent != null}" class="text-muted me-1">&lfloor;</span>
+                                <strong th:text="${cat.name}">Tên</strong>
+                            </td>
+                            <td>
+                                <span th:if="${cat.parent != null}" class="badge bg-info text-dark" th:text="${cat.parent.name}">Cha</span>
+                                <span th:if="${cat.parent == null}" class="badge bg-light text-secondary border">Danh mục Gốc</span>
+                            </td>
+                            <td class="small text-muted" th:text="${cat.description}">Mô tả</td>
+                            <td>
+                                <span th:if="${cat.active}" class="badge bg-success">Hiển thị</span>
+                                <span th:if="${!cat.active}" class="badge bg-secondary">Ẩn</span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a th:href="@{/items(categoryId=${cat.id})}" class="btn btn-sm btn-outline-primary" title="Xem sản phẩm">
+                                    <i class="bi bi-eye"></i> SP
+                                </a>
+                                <th:block th:if="${isAdmin or isStaff}">
+                                    <a th:href="@{/categories(editId=${cat.id})}" class="btn btn-sm btn-outline-warning text-dark">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form th:action="@{/categories/delete/{id}(id=${cat.id})}" method="post" class="d-inline"
+                                          onsubmit="return confirm('Xác nhận xóa danh mục này?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </th:block>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Giỏ hàng & Tạm tính')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container my-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="bi bi-cart3 text-primary me-2"></i>Giỏ hàng của bạn (SV3: Cart &amp; Promotion)</h4>
+            <small class="text-muted">Cập nhật số lượng tức thời, áp dụng mã giảm giá Item-level / Cart-level và đặt hàng an toàn</small>
+        </div>
+        <a th:href="@{/items}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+            <i class="bi bi-arrow-left me-1"></i>Tiếp tục chọn mua
+        </a>
+    </div>
+
+    <div th:if="${cart.items == null or cart.items.isEmpty()}" class="card p-5 text-center">
+        <div class="display-3 text-primary opacity-50 mb-2"><i class="bi bi-bag-plus"></i></div>
+        <h5 class="fw-bold">Giỏ hàng của bạn đang trống</h5>
+        <p class="text-muted mx-auto" style="max-width: 480px;">
+            Hãy khám phá các dòng Laptop, Thiết bị IoT thông minh hoặc đăng ký Gói dịch vụ / Khóa học thực chiến ngay hôm nay!
+        </p>
+        <div>
+            <a th:href="@{/items}" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold">
+                <i class="bi bi-stars me-1"></i>Khám phá Cửa hàng ngay
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4" th:if="${cart.items != null and !cart.items.isEmpty()}">
+        <!-- Cart Items -->
+        <div class="col-lg-8">
+            <div class="card mb-3 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Sản phẩm / Dịch vụ</th>
+                            <th>Đơn giá</th>
+                            <th style="width: 155px;">Số lượng</th>
+                            <th class="text-end">Thành tiền</th>
+                            <th class="pe-3"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="ci : ${cart.items}">
+                            <td class="ps-4 py-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <a th:href="@{/items/detail/{id}(id=${ci.item.id})}">
+                                        <img th:src="@{${ci.item.displayImageUrl}}" th:alt="${ci.item.name}" class="thumb-sm">
+                                    </a>
+                                    <div>
+                                        <a th:href="@{/items/detail/{id}(id=${ci.item.id})}"
+                                           class="fw-bold text-dark text-decoration-none d-block" th:text="${ci.item.name}">SP</a>
+                                        <div class="mt-1">
+                                            <span class="badge rounded-pill small"
+                                                  th:classappend="${ci.item.itemType.name() == 'PHYSICAL' ? 'badge-physical' : 'badge-service'}"
+                                                  th:text="${ci.item.itemType.name() == 'PHYSICAL' ? '📦 Hàng vật lý' : '📅 Dịch vụ'}"></span>
+                                            <small class="text-muted ms-1" th:if="${ci.item.itemType.name() == 'PHYSICAL'}"
+                                                   th:text="'(' + ${ci.item.weight} + ' kg)'"></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="fw-medium" th:text="${#numbers.formatDecimal(ci.unitPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                            <td>
+                                <form th:action="@{/cart/update}" method="post" class="d-flex gap-1">
+                                    <input type="hidden" name="cartItemId" th:value="${ci.id}">
+                                    <input type="number" name="quantity" min="0" max="99" th:value="${ci.quantity}"
+                                           class="form-control form-control-sm text-center fw-bold">
+                                    <button type="submit" class="btn btn-outline-primary btn-sm" title="Cập nhật số lượng">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </button>
+                                </form>
+                            </td>
+                            <td class="text-end fw-bold text-primary"
+                                th:text="${#numbers.formatDecimal(ci.lineSubtotal, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                            <td class="text-end pe-3">
+                                <form th:action="@{/cart/remove/{id}(id=${ci.id})}" method="post">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle" title="Xóa khỏi giỏ">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Promotion Coupon Box -->
+            <div class="promo-ticket p-4">
+                <h6 class="fw-bold mb-2"><i class="bi bi-ticket-perforated-fill text-danger me-2"></i>Ưu đãi &amp; Mã Khuyến Mãi (Item-level / Cart-level)</h6>
+
+                <div th:if="${cart.promotionCode != null}" class="d-flex justify-content-between align-items-center alert alert-success border-0 rounded-3 py-2 mb-3">
+                    <span>
+                        <i class="bi bi-check-circle-fill me-1"></i>Đang áp dụng mã:
+                        <strong class="font-monospace" th:text="${cart.promotionCode}">CODE</strong>
+                    </span>
+                    <form th:action="@{/cart/remove-coupon}" method="post">
+                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">Gỡ mã</button>
+                    </form>
+                </div>
+
+                <form th:action="@{/cart/apply-coupon}" method="post" class="d-flex gap-2 mb-3">
+                    <input type="text" id="couponInput" name="code" class="form-control"
+                           placeholder="Nhập mã khuyến mãi (VD: UCOP10, GIAM200K, IOT20...)" required>
+                    <button type="submit" class="btn btn-danger rounded-pill text-nowrap px-4 fw-semibold">Áp dụng</button>
+                </form>
+
+                <div class="small" th:if="${activePromotions != null and !activePromotions.isEmpty()}">
+                    <span class="text-muted me-1">Bấm chọn nhanh mã khả dụng:</span>
+                    <button type="button" th:each="p : ${activePromotions}"
+                            class="btn btn-sm btn-outline-danger rounded-pill me-1 mb-1 py-0.5 px-2.5"
+                            th:data-code="${p.code}"
+                            onclick="document.getElementById('couponInput').value = this.getAttribute('data-code');">
+                        <strong class="font-monospace" th:text="${p.code}"></strong>
+                        <span class="opacity-75" th:text="'(' + ${p.scope} + ')'"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary & Place Order -->
+        <div class="col-lg-4">
+            <div class="card border-primary border-top border-4">
+                <div class="card-header py-3">
+                    <i class="bi bi-calculator text-primary me-2"></i>Tạm tính &amp; Đặt hàng (@Transactional)
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Tạm tính (Subtotal):</span>
+                        <strong th:text="${#numbers.formatDecimal(summary.subtotal, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-success" th:if="${summary.itemDiscount.doubleValue() > 0}">
+                        <span>Giảm theo SP (Item-level):</span>
+                        <span class="fw-semibold" th:text="'-' + ${#numbers.formatDecimal(summary.itemDiscount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-success" th:if="${summary.cartDiscount.doubleValue() > 0}">
+                        <span>Giảm giỏ hàng (Cart-level):</span>
+                        <span class="fw-semibold" th:text="'-' + ${#numbers.formatDecimal(summary.cartDiscount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Thuế VAT (10%):</span>
+                        <span th:text="${#numbers.formatDecimal(summary.taxAmount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Phí vận chuyển (theo kg):</span>
+                        <span th:text="${#numbers.formatDecimal(summary.shippingFee, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <hr>
+                    <div class="p-3 rounded-3 bg-primary bg-opacity-10 d-flex justify-content-between align-items-center mb-3">
+                        <span class="fw-bold">Tổng dự kiến:</span>
+                        <span class="fw-bold fs-4 text-primary"
+                              th:text="${#numbers.formatDecimal(summary.grandTotal, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+
+                    <form th:action="@{/orders/checkout}" method="post">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Địa chỉ nhận hàng / Địa điểm dịch vụ *</label>
+                            <textarea name="shippingAddress" rows="2" class="form-control form-control-sm"
+                                      placeholder="Nhập địa chỉ nhận hàng hoặc địa điểm thực hiện dịch vụ..."
+                                      required th:text="${defaultAddress}"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Ghi chú đơn hàng</label>
+                            <input type="text" name="note" class="form-control form-control-sm" placeholder="Khung giờ nhận hàng / Yêu cầu thêm...">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill py-2.5 fw-bold">
+                            <i class="bi bi-bag-check-fill me-1"></i>Đặt hàng &amp; Chọn Thanh toán &rarr;
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

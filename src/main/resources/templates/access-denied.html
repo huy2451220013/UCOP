@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Từ chối truy cập (403)')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container my-5 text-center">
+    <div class="card mx-auto p-5" style="max-width: 560px;">
+        <div class="text-danger display-1 mb-3"><i class="bi bi-shield-slash-fill"></i></div>
+        <h3 class="fw-bold">403 - Không đủ quyền truy cập (RBAC)</h3>
+        <p class="text-muted">
+            Tài khoản hiện tại của bạn không có quyền truy cập vào chức năng này.
+            Vui lòng đăng nhập bằng tài khoản <strong>ADMIN</strong> hoặc <strong>STAFF</strong> phù hợp.
+        </p>
+        <div class="d-flex justify-content-center gap-2 mt-3">
+            <a th:href="@{/}" class="btn btn-primary"><i class="bi bi-house me-1"></i>Về trang chủ</a>
+            <a th:href="@{/logout}" class="btn btn-outline-secondary">Đổi tài khoản khác</a>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

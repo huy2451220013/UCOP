@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${item.name})}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container my-4">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small mb-0">
+            <li class="breadcrumb-item"><a th:href="@{/}" class="text-decoration-none">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a th:href="@{/items}" class="text-decoration-none">Cửa hàng &amp; Dịch vụ</a></li>
+            <li class="breadcrumb-item active fw-semibold" th:text="${item.name}">Chi tiết</li>
+        </ol>
+    </nav>
+
+    <div class="card p-4 p-lg-5 overflow-hidden">
+        <div class="row g-4 g-lg-5 align-items-center">
+            <!-- Left Studio Image Showcase -->
+            <div class="col-lg-6">
+                <div class="rounded-4 overflow-hidden border shadow-sm"
+                     style="background: linear-gradient(145deg, #f8fafc 0%, #eef2ff 100%);">
+                    <img th:src="@{${item.displayImageUrl}}" th:alt="${item.name}"
+                         class="w-100 d-block" style="aspect-ratio: 4/3; object-fit: cover;">
+                </div>
+
+                <div class="row g-2 mt-3 text-center small">
+                    <div class="col-4">
+                        <div class="p-2 rounded-3 bg-light border h-100">
+                            <i class="bi bi-shield-check text-primary fs-5 d-block mb-1"></i>
+                            <span class="fw-semibold">Chính hãng 100%</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 rounded-3 bg-light border h-100">
+                            <i class="bi bi-wallet2 text-success fs-5 d-block mb-1"></i>
+                            <span class="fw-semibold">Hỗ trợ Ví UCOP</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 rounded-3 bg-light border h-100">
+                            <i class="bi bi-arrow-repeat text-danger fs-5 d-block mb-1"></i>
+                            <span class="fw-semibold">Đổi trả &amp; Refund</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Product Info & Buy Box -->
+            <div class="col-lg-6">
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    <span class="badge rounded-pill px-3 py-2"
+                          th:classappend="${item.itemType.name() == 'PHYSICAL' ? 'badge-physical' : 'badge-service'}"
+                          th:text="${item.itemType.name() == 'PHYSICAL' ? '📦 Hàng hóa vật lý (PHYSICAL)' : '📅 Gói dịch vụ / Lịch hẹn (SERVICE)'}"></span>
+                    <span class="badge rounded-pill bg-light text-dark border px-3 py-2 font-monospace"
+                          th:text="'SKU: ' + ${item.sku}"></span>
+                </div>
+
+                <h2 class="fw-bold mb-2" th:text="${item.name}">Tên sản phẩm</h2>
+
+                <div class="text-muted small mb-3">
+                    Danh mục: <strong class="text-dark" th:text="${item.category != null ? item.category.fullPathName : 'Chưa phân loại'}"></strong>
+                    <span th:if="${item.itemType.name() == 'PHYSICAL'}"
+                          th:text="' • Khối lượng: ' + ${item.weight} + ' kg'"></span>
+                </div>
+
+                <p class="text-secondary mb-4 lh-lg" th:text="${item.description}">Mô tả chi tiết</p>
+
+                <div class="p-4 rounded-4 mb-4 border" style="background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);">
+                    <div class="small text-muted text-uppercase fw-semibold mb-1">Giá niêm yết</div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <span class="display-6 fw-bold text-primary"
+                              th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                        <span class="text-muted" th:text="'/ ' + ${item.unit}"></span>
+                    </div>
+
+                    <div th:if="${item.itemType.name() == 'PHYSICAL'}" class="mt-2 pt-2 border-top small">
+                        <i class="bi bi-boxes me-1 text-primary"></i>Tồn kho khả dụng toàn hệ thống:
+                        <span class="badge rounded-pill ms-1"
+                              th:classappend="${availableStock > 5 ? 'bg-success' : (availableStock > 0 ? 'bg-warning text-dark' : 'bg-danger')}"
+                              th:text="${availableStock + ' ' + item.unit}"></span>
+                    </div>
+                    <div th:if="${item.itemType.name() == 'SERVICE'}" class="mt-2 pt-2 border-top small text-success fw-medium">
+                        <i class="bi bi-calendar2-check-fill me-1"></i>Gói dịch vụ luôn sẵn sàng xếp lịch hẹn chuyên gia ngay sau khi thanh toán!
+                    </div>
+                </div>
+
+                <form th:action="@{/cart/add}" method="post" class="mb-3">
+                    <input type="hidden" name="itemId" th:value="${item.id}">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-sm-4">
+                            <div class="input-group">
+                                <button class="btn btn-outline-secondary" type="button" onclick="stepQty(-1)">&minus;</button>
+                                <input type="number" id="qtyInput" name="quantity" value="1" min="1" max="99" class="form-control text-center fw-bold">
+                                <button class="btn btn-outline-secondary" type="button" onclick="stepQty(1)">+</button>
+                            </div>
+                        </div>
+                        <div class="col-sm-8">
+                            <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold"
+                                    th:disabled="${item.status != 'ACTIVE' or (item.itemType.name() == 'PHYSICAL' and availableStock <= 0)}">
+                                <i class="bi bi-cart-plus-fill me-2"></i>Thêm vào Giỏ hàng
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="d-flex flex-wrap gap-2 pt-3 border-top" th:if="${isAdmin == true or isStaff == true}">
+                    <a th:href="@{/items/edit/{id}(id=${item.id})}" class="btn btn-sm btn-outline-warning text-dark rounded-pill px-3">
+                        <i class="bi bi-pencil me-1"></i>Chỉnh sửa Sản phẩm / Ảnh
+                    </a>
+                    <a th:href="@{/stock}" class="btn btn-sm btn-outline-info text-dark rounded-pill px-3">
+                        <i class="bi bi-boxes me-1"></i>Điều chỉnh Tồn kho
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    function stepQty(delta) {
+        const inp = document.getElementById('qtyInput');
+        const next = Math.max(1, Math.min(99, (parseInt(inp.value || '1', 10) + delta)));
+        inp.value = next;
+    }
+</script>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

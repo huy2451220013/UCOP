@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Thêm / Cập nhật Sản phẩm & Dịch vụ')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="bi bi-box-seam text-primary me-2"></i>
+                        <strong th:text="${itemForm.id != null ? 'Cập nhật Sản phẩm / Dịch vụ #' + itemForm.id : 'Thêm Sản phẩm / Dịch vụ mới'}"></strong>
+                    </span>
+                    <a th:href="@{/items}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">&larr; Quay lại</a>
+                </div>
+                <div class="card-body p-4">
+                    <form th:action="@{/items/save}" th:object="${itemForm}" method="post">
+                        <input type="hidden" th:field="*{id}">
+
+                        <div class="row g-4">
+                            <div class="col-lg-8">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">Mã SKU *</label>
+                                        <input type="text" th:field="*{sku}" class="form-control" placeholder="VD: LAP-ASUS-01">
+                                        <div class="text-danger small mt-1" th:if="${#fields.hasErrors('sku')}" th:errors="*{sku}"></div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="form-label fw-semibold">Tên Sản phẩm / Gói dịch vụ *</label>
+                                        <input type="text" th:field="*{name}" class="form-control" placeholder="Nhập tên đầy đủ">
+                                        <div class="text-danger small mt-1" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Danh mục *</label>
+                                        <select th:field="*{categoryId}" class="form-select">
+                                            <option value="">-- Chọn danh mục --</option>
+                                            <option th:each="c : ${categories}" th:value="${c.id}"
+                                                    th:text="${(c.parent != null ? '↳ ' : '') + c.name}"></option>
+                                        </select>
+                                        <div class="text-danger small mt-1" th:if="${#fields.hasErrors('categoryId')}" th:errors="*{categoryId}"></div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Loại hình (ItemType) *</label>
+                                        <select th:field="*{itemType}" class="form-select">
+                                            <option value="PHYSICAL">PHYSICAL - Hàng hóa vật lý (Có tồn kho &amp; Vận chuyển)</option>
+                                            <option value="SERVICE">SERVICE - Dịch vụ / Khóa học / Đặt lịch hẹn</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">Đơn giá (VNĐ) *</label>
+                                        <input type="number" step="1000" th:field="*{price}" class="form-control">
+                                        <div class="text-danger small mt-1" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">Đơn vị tính *</label>
+                                        <input type="text" th:field="*{unit}" class="form-control" placeholder="Chiếc / Gói / Khóa">
+                                        <div class="text-danger small mt-1" th:if="${#fields.hasErrors('unit')}" th:errors="*{unit}"></div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">Khối lượng (kg - tính ship)</label>
+                                        <input type="number" step="0.1" th:field="*{weight}" class="form-control">
+                                        <div class="text-danger small mt-1" th:if="${#fields.hasErrors('weight')}" th:errors="*{weight}"></div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">Trạng thái</label>
+                                        <select th:field="*{status}" class="form-select">
+                                            <option value="ACTIVE">ACTIVE - Đang kinh doanh</option>
+                                            <option value="INACTIVE">INACTIVE - Ngừng kinh doanh</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-8">
+                                        <label class="form-label fw-semibold">Ảnh minh họa (URL hoặc chọn mẫu bên cạnh)</label>
+                                        <input type="text" th:field="*{imageUrl}" id="imageUrlInput" class="form-control"
+                                               placeholder="/images/dell-xps15.jpg hoặc https://..."
+                                               oninput="updateImgPreview(this.value)">
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Mô tả chi tiết</label>
+                                        <textarea th:field="*{description}" rows="3" class="form-control"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Image Preview & Quick Gallery Picker -->
+                            <div class="col-lg-4">
+                                <div class="p-3 rounded-4 border bg-light h-100">
+                                    <div class="small fw-bold text-secondary mb-2"><i class="bi bi-image me-1"></i>Xem trước ảnh minh họa</div>
+                                    <div class="rounded-3 overflow-hidden border bg-white mb-3">
+                                        <img id="imgPreviewBox"
+                                             th:src="${itemForm.imageUrl != null and !itemForm.imageUrl.isEmpty() ? itemForm.imageUrl : '/images/dell-xps15.jpg'}"
+                                             alt="Preview" class="w-100 d-block" style="aspect-ratio: 4/3; object-fit: cover;">
+                                    </div>
+                                    <div class="small fw-semibold mb-2">Chọn nhanh ảnh mẫu có sẵn:</div>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="pickImg('/images/dell-xps15.jpg')">Laptop OLED</button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="pickImg('/images/macbook-m3.jpg')">MacBook M3</button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="pickImg('/images/iot-kit-pro.jpg')">Trạm IoT</button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="pickImg('/images/iot-cam-ai.jpg')">Camera AI</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="pickImg('/images/edu-spring-pro.jpg')">Khóa học IT</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="pickImg('/images/srv-iot-maint.jpg')">Bảo trì / DV</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-top d-flex gap-2">
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                                <i class="bi bi-save me-1"></i>Lưu thông tin (Có ghi Audit Log khi đổi giá)
+                            </button>
+                            <a th:href="@{/items}" class="btn btn-outline-secondary rounded-pill px-4">Hủy</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    function pickImg(url) {
+        document.getElementById('imageUrlInput').value = url;
+        updateImgPreview(url);
+    }
+    function updateImgPreview(url) {
+        if (url && url.trim().length > 0) {
+            document.getElementById('imgPreviewBox').src = url.trim();
+        }
+    }
+</script>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

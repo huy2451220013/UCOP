@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Điều phối Vận đơn & Lịch hẹn Dịch vụ')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container my-4">
+    <h4 class="fw-bold mb-1"><i class="bi bi-truck text-primary me-2"></i>SV3: Trung tâm Điều phối Giao vận (Shipment) &amp; Lịch hẹn (Appointment)</h4>
+    <p class="text-muted small mb-4">Quản lý thực thi đơn hàng tách biệt giữa Hàng hóa vật lý và Dịch vụ</p>
+
+    <div class="row g-4">
+        <!-- All Shipments -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header py-3">
+                    <i class="bi bi-box-seam text-primary me-2"></i>Danh sách Vận đơn Hàng Vật lý (Shipments)
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Mã Tracking</th>
+                            <th>Đơn hàng</th>
+                            <th>Đơn vị VC</th>
+                            <th>Địa chỉ giao</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Cập nhật nhanh</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="sh : ${shipments}">
+                            <td><code class="fw-bold" th:text="${sh.trackingNumber}">TRK</code></td>
+                            <td>
+                                <a th:href="@{/orders/detail/{id}(id=${sh.order.id})}" th:text="${sh.order.orderCode}">ORD</a>
+                            </td>
+                            <td th:text="${sh.carrier}">GHN</td>
+                            <td th:text="${sh.shippingAddress}">Địa chỉ</td>
+                            <td><span class="badge bg-info text-dark" th:text="${sh.status}"></span></td>
+                            <td class="text-end">
+                                <form th:action="@{/orders/shipment/{sid}/status(sid=${sh.id})}" method="post" class="d-inline-flex gap-1">
+                                    <select name="status" class="form-select form-select-sm">
+                                        <option th:each="st : ${ {'PREPARING','IN_TRANSIT','DELIVERED','FAILED'} }"
+                                                th:value="${st}" th:text="${st}" th:selected="${sh.status == st}"></option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-primary">Lưu</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${shipments.isEmpty()}">
+                            <td colspan="6" class="text-center py-3 text-muted">Chưa có vận đơn nào.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- All Appointments -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header py-3">
+                    <i class="bi bi-calendar-event text-success me-2"></i>Danh sách Lịch hẹn Dịch vụ (Appointments)
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Dịch vụ</th>
+                            <th>Đơn hàng</th>
+                            <th>Thời gian hẹn</th>
+                            <th>Địa điểm</th>
+                            <th>Nhân sự phụ trách</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Cập nhật nhanh</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="ap : ${appointments}">
+                            <td class="fw-semibold" th:text="${ap.serviceName}">DV</td>
+                            <td>
+                                <a th:href="@{/orders/detail/{id}(id=${ap.order.id})}" th:text="${ap.order.orderCode}">ORD</a>
+                            </td>
+                            <td th:text="${#temporals.format(ap.appointmentTime, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td th:text="${ap.location}">Location</td>
+                            <td th:text="${ap.staffAssigned}">Staff</td>
+                            <td><span class="badge bg-warning text-dark" th:text="${ap.status}"></span></td>
+                            <td class="text-end">
+                                <form th:action="@{/orders/appointment/{aid}/status(aid=${ap.id})}" method="post" class="d-inline-flex gap-1">
+                                    <select name="status" class="form-select form-select-sm">
+                                        <option th:each="st : ${ {'SCHEDULED','CONFIRMED','COMPLETED','CANCELED'} }"
+                                                th:value="${st}" th:text="${st}" th:selected="${ap.status == st}"></option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-success">Lưu</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${appointments.isEmpty()}">
+                            <td colspan="7" class="text-center py-3 text-muted">Chưa có lịch hẹn dịch vụ nào.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# Compiled class file & Maven build output
+target/
+*.class
+
+# Log file
+*.log
+
+# Word / Office temporary lock files
+~$*
+
+# IDE metadata
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.DS_Store
+Thumbs.db

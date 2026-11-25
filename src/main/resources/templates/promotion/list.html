@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Quản lý Khuyến mãi Item-level & Cart-level')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container my-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="bi bi-tags-fill text-primary me-2"></i>SV5: Quản lý Mã Khuyến Mãi (Item-level &amp; Cart-level)</h4>
+            <small class="text-muted">Quan hệ 1-N (Promotion &rarr; PromotionUsage), hỗ trợ giảm theo % (PERCENTAGE) hoặc số tiền cố định (FIXED)</small>
+        </div>
+        <a th:href="@{/promotions/add}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i>Tạo Mã Khuyến Mãi mới
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                <tr>
+                    <th>Mã Code</th>
+                    <th>Phạm vi (Scope)</th>
+                    <th>Mức giảm</th>
+                    <th>Đơn tối thiểu</th>
+                    <th>Lượt dùng</th>
+                    <th>Thời hạn</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${promotions}">
+                    <td>
+                        <span class="badge bg-danger font-monospace fs-6" th:text="${p.code}">CODE</span>
+                        <div class="text-muted mt-1" th:text="${p.description}"></div>
+                    </td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${p.scope.name() == 'ITEM' ? 'bg-info text-dark' : 'bg-primary'}"
+                              th:text="${p.scope}"></span>
+                        <div class="text-muted mt-1" th:if="${p.targetItem != null}" th:text="${p.targetItem.name}"></div>
+                    </td>
+                    <td class="fw-bold text-danger"
+                        th:text="${p.discountType.name() == 'PERCENTAGE' ? p.discountValue + '%' : #numbers.formatDecimal(p.discountValue, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                    <td th:text="${#numbers.formatDecimal(p.minOrderAmount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                    <td th:text="${p.usedCount + ' / ' + (p.maxUsage != null ? p.maxUsage : '∞')}"></td>
+                    <td>
+                        <div th:text="${p.startDate != null ? #temporals.format(p.startDate, 'dd/MM/yyyy') : 'Ngay'}"></div>
+                        <div class="text-muted" th:text="${'→ ' + (p.endDate != null ? #temporals.format(p.endDate, 'dd/MM/yyyy') : 'Không giới hạn')}"></div>
+                    </td>
+                    <td>
+                        <span th:if="${p.validNow}" class="badge bg-success">Hiệu lực</span>
+                        <span th:if="${!p.validNow}" class="badge bg-secondary">Ngừng / Hết hạn</span>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a th:href="@{/promotions/edit/{id}(id=${p.id})}" class="btn btn-sm btn-outline-warning text-dark">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form th:action="@{/promotions/delete/{id}(id=${p.id})}" method="post" class="d-inline"
+                              onsubmit="return confirm('Xóa / ngừng kích hoạt mã khuyến mãi này?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Promotion Usage History (1-N) -->
+    <div class="card">
+        <div class="card-header py-3">
+            <i class="bi bi-clock-history text-secondary me-2"></i>Lịch sử Áp dụng Khuyến mãi gần đây (PromotionUsage)
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 small">
+                <thead class="table-light">
+                <tr>
+                    <th>Thời gian</th>
+                    <th>Mã KM</th>
+                    <th>Đơn hàng</th>
+                    <th>Khách hàng</th>
+                    <th class="text-end">Số tiền được giảm</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="u : ${recentUsages}">
+                    <td th:text="${u.usedAt != null ? #temporals.format(u.usedAt, 'dd/MM/yyyy HH:mm') : '-'}"></td>
+                    <td><code class="fw-bold text-danger" th:text="${u.promotion.code}"></code></td>
+                    <td><a th:href="@{/orders/detail/{id}(id=${u.order.id})}" th:text="${u.order.orderCode}"></a></td>
+                    <td th:text="${u.account.username}"></td>
+                    <td class="text-end fw-bold text-success"
+                        th:text="'-' + ${#numbers.formatDecimal(u.discountAmount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                </tr>
+                <tr th:if="${recentUsages.isEmpty()}">
+                    <td colspan="5" class="text-center py-3 text-muted">Chưa có lượt sử dụng mã khuyến mãi nào.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

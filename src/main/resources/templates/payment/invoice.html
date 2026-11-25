@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Hóa đơn ' + ${order.orderCode})}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+        <a th:href="@{/orders/detail/{id}(id=${order.id})}" class="btn btn-outline-secondary btn-sm">
+            &larr; Chi tiết Đơn hàng
+        </a>
+        <button onclick="window.print()" class="btn btn-primary btn-sm">
+            <i class="bi bi-printer me-1"></i>In Hóa đơn / Xuất PDF
+        </button>
+    </div>
+
+    <div class="card p-4 p-md-5 mx-auto" style="max-width: 850px;">
+        <div class="d-flex justify-content-between border-bottom pb-3 mb-4">
+            <div>
+                <h3 class="fw-bold text-primary mb-1">UCOP PLATFORM - HÓA ĐƠN BÁN HÀNG</h3>
+                <div class="small text-muted">Universal Commerce &amp; Operations Platform</div>
+            </div>
+            <div class="text-end">
+                <div class="fw-bold">Mã đơn: <span class="font-monospace" th:text="${order.orderCode}"></span></div>
+                <div class="small">Mã GD: <code th:text="${payment.transactionRef}"></code></div>
+                <div class="small text-muted"
+                     th:text="${'Ngày: ' + (payment.paidAt != null ? #temporals.format(payment.paidAt, 'dd/MM/yyyy HH:mm') : #temporals.format(payment.createdAt, 'dd/MM/yyyy HH:mm'))}"></div>
+            </div>
+        </div>
+
+        <div class="row mb-4 small">
+            <div class="col-md-6">
+                <div class="text-uppercase text-muted fw-bold mb-1">Khách hàng</div>
+                <div class="fw-semibold fs-6" th:text="${order.account.profile != null ? order.account.profile.fullName : order.account.username}"></div>
+                <div th:text="${order.account.email}"></div>
+                <div th:text="${order.shippingAddress}"></div>
+            </div>
+            <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                <div class="text-uppercase text-muted fw-bold mb-1">Thông tin Thanh toán</div>
+                <div>Phương thức: <strong th:text="${payment.method}"></strong></div>
+                <div>Trạng thái: <span class="badge bg-success" th:text="${payment.status}"></span></div>
+            </div>
+        </div>
+
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered align-middle small">
+                <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Sản phẩm / Dịch vụ</th>
+                    <th class="text-center">SL</th>
+                    <th class="text-end">Đơn giá</th>
+                    <th class="text-end">Giảm SP</th>
+                    <th class="text-end">Thành tiền</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="oi, st : ${order.orderItems}">
+                    <td th:text="${st.count}">1</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <img th:src="@{${oi.item.displayImageUrl}}" th:alt="${oi.item.name}" class="thumb-xs">
+                            <div>
+                                <strong th:text="${oi.item.name}"></strong>
+                                <div class="text-muted" th:text="${oi.item.sku + ' (' + oi.item.itemType + ')'}"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-center" th:text="${oi.quantity}">1</td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(oi.unitPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(oi.itemDiscount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                    <td class="text-end fw-semibold" th:text="${#numbers.formatDecimal(oi.lineTotal, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="row justify-content-end">
+            <div class="col-md-6 small">
+                <div class="d-flex justify-content-between py-1">
+                    <span>Tạm tính:</span>
+                    <span th:text="${#numbers.formatDecimal(payment.subtotal, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                </div>
+                <div class="d-flex justify-content-between py-1 text-success">
+                    <span>Tổng giảm giá:</span>
+                    <span th:text="'-' + ${#numbers.formatDecimal(payment.discountAmount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span>Thuế VAT (10%):</span>
+                    <span th:text="${#numbers.formatDecimal(payment.taxAmount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span>Phí vận chuyển:</span>
+                    <span th:text="${#numbers.formatDecimal(payment.shippingFee, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                </div>
+                <div class="d-flex justify-content-between py-1" th:if="${payment.codFee.doubleValue() > 0}">
+                    <span>Phí thu hộ COD:</span>
+                    <span th:text="${#numbers.formatDecimal(payment.codFee, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                </div>
+                <div class="d-flex justify-content-between py-1" th:if="${payment.gatewayFee.doubleValue() > 0}">
+                    <span>Phí cổng thanh toán (1.5%):</span>
+                    <span th:text="${#numbers.formatDecimal(payment.gatewayFee, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-top fw-bold fs-6">
+                    <span>TỔNG CỘNG (GRAND TOTAL):</span>
+                    <span class="text-primary" th:text="${#numbers.formatDecimal(payment.grandTotal, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                </div>
+                <div class="d-flex justify-content-between py-1 text-success" th:if="${payment.walletUsed.doubleValue() > 0}">
+                    <span>Đã trừ Ví UCOP:</span>
+                    <span th:text="'-' + ${#numbers.formatDecimal(payment.walletUsed, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                </div>
+                <div class="d-flex justify-content-between py-1 fw-semibold">
+                    <span>Thanh toán qua phương thức chính:</span>
+                    <span th:text="${#numbers.formatDecimal(payment.amountDue, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

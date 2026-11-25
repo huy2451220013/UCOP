@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Tạo / Sửa Khuyến mãi')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <strong th:text="${promo.id != null ? 'Cập nhật Mã Khuyến Mãi #' + promo.id : 'Tạo Mã Khuyến Mãi mới'}"></strong>
+                    <a th:href="@{/promotions}" class="btn btn-outline-secondary btn-sm">&larr; Quay lại</a>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/promotions/save}" method="post">
+                        <input type="hidden" name="id" th:if="${promo.id != null}" th:value="${promo.id}">
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Mã Code *</label>
+                                <input type="text" name="code" class="form-control text-uppercase"
+                                       th:value="${promo.code}" placeholder="VD: SUMMER20" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Phạm vi (Scope) *</label>
+                                <select name="scope" id="promoScope" class="form-select" onchange="toggleTargetItem()">
+                                    <option th:each="s : ${scopes}" th:value="${s}" th:text="${s}"
+                                            th:selected="${promo.scope == s}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Sản phẩm mục tiêu (Nếu Scope = ITEM)</label>
+                                <select name="targetItemId" id="targetItemSelect" class="form-select">
+                                    <option value="">-- Áp dụng toàn giỏ --</option>
+                                    <option th:each="it : ${items}" th:value="${it.id}"
+                                            th:text="${it.sku + ' - ' + it.name}"
+                                            th:selected="${promo.targetItem != null and promo.targetItem.id.equals(it.id)}"></option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Kiểu giảm giá *</label>
+                                <select name="discountType" class="form-select">
+                                    <option th:each="dt : ${discountTypes}" th:value="${dt}" th:text="${dt}"
+                                            th:selected="${promo.discountType == dt}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Giá trị giảm (% hoặc VNĐ) *</label>
+                                <input type="number" step="0.01" name="discountValue" class="form-control"
+                                       th:value="${promo.discountValue != null ? promo.discountValue : 10}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Đơn hàng tối thiểu (VNĐ)</label>
+                                <input type="number" step="1000" name="minOrderAmount" class="form-control"
+                                       th:value="${promo.minOrderAmount != null ? promo.minOrderAmount : 0}">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Số lượt dùng tối đa</label>
+                                <input type="number" name="maxUsage" class="form-control"
+                                       th:value="${promo.maxUsage != null ? promo.maxUsage : 100}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Ngày bắt đầu</label>
+                                <input type="date" name="startDate" class="form-control"
+                                       th:value="${promo.startDate != null ? #temporals.format(promo.startDate, 'yyyy-MM-dd') : ''}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Ngày kết thúc</label>
+                                <input type="date" name="endDate" class="form-control"
+                                       th:value="${promo.endDate != null ? #temporals.format(promo.endDate, 'yyyy-MM-dd') : ''}">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Mô tả chương trình</label>
+                                <input type="text" name="description" class="form-control" th:value="${promo.description}">
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="active" value="true" id="activeChk"
+                                           th:checked="${promo.id == null or promo.active}">
+                                    <label class="form-check-label fw-semibold" for="activeChk">Kích hoạt mã khuyến mãi</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4">Lưu Khuyến Mãi</button>
+                            <a th:href="@{/promotions}" class="btn btn-outline-secondary">Hủy</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<script>
+    function toggleTargetItem() {
+        var scope = document.getElementById('promoScope').value;
+        document.getElementById('targetItemSelect').disabled = (scope !== 'ITEM');
+    }
+    toggleTargetItem();
+</script>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

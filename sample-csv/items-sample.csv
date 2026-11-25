@@ -1,0 +1,3 @@
+SKU,Name,CategoryName,ItemType,Unit,Price,Weight,Status,Description
+"CAM-AI-4K","Camera AI An Ninh 4K Xoay 360","Thiết bị Công nghệ",PHYSICAL,"Chiếc",1490000,0.6,ACTIVE,"Camera AI nhận diện khuôn mặt, đàm thoại 2 chiều"
+"SRV-CLOUD-1Y","Gói Cloud Backup Doanh nghiệp 1 Năm","Dịch vụ & Giải pháp",SERVICE,"Gói",2990000,0.0,ACTIVE,"Sao lưu dữ liệu tự động kèm tư vấn triển khai định kỳ"

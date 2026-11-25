@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Trang chủ')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container my-4">
+    <!-- Hero Split Showcase -->
+    <section class="hero-mesh p-4 p-lg-5 mb-4 text-white shadow-lg">
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-7">
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1.5 rounded-pill mb-3"
+                     style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);">
+                    <span class="badge rounded-pill bg-warning text-dark">NEW 2026</span>
+                    <span class="small fw-medium">Thương mại Vật lý &amp; Đặt lịch Dịch vụ Hợp nhất</span>
+                </div>
+
+                <h1 class="display-5 fw-bold mb-3 lh-sm">
+                    Mua sắm Thiết bị Công nghệ &amp; Giải pháp Dịch vụ Thông minh
+                </h1>
+                <p class="lead opacity-90 mb-4" style="font-size: 1.05rem;">
+                    Trải nghiệm hệ sinh thái <strong>UCOP</strong>: Quản lý tồn kho đa kho thời gian thực, đặt lịch hẹn dịch vụ chuyên gia, thanh toán siêu tốc bằng <strong>Ví điện tử UCOP</strong> và hoàn tiền tự động 100%.
+                </p>
+
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    <a th:href="@{/items}" class="btn btn-info btn-lg rounded-pill text-dark fw-bold px-4 shadow">
+                        <i class="bi bi-bag-heart-fill me-2"></i>Mua sắm ngay
+                    </a>
+                    <a th:if="${currentUserId == null}" th:href="@{/login}" class="btn btn-outline-light btn-lg rounded-pill px-4">
+                        <i class="bi bi-person-check me-2"></i>Đăng nhập tài khoản mẫu
+                    </a>
+                    <a th:if="${isAdmin == true or isStaff == true}" th:href="@{/reports/dashboard}" class="btn btn-warning btn-lg rounded-pill text-dark fw-bold px-4">
+                        <i class="bi bi-graph-up-arrow me-2"></i>Dashboard Điều hành
+                    </a>
+                </div>
+
+                <!-- Quick Demo Credentials Strip -->
+                <div class="d-flex flex-wrap gap-3 pt-2 border-top border-light border-opacity-25 small">
+                    <div><i class="bi bi-shield-lock-fill text-warning me-1"></i>Admin: <code>admin</code> / <code>123456</code></div>
+                    <div><i class="bi bi-briefcase-fill text-info me-1"></i>Staff: <code>staff</code> / <code>123456</code></div>
+                    <div><i class="bi bi-person-heart text-light me-1"></i>Khách: <code>customer1</code> / <code>123456</code></div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="hero-showcase-frame">
+                    <img th:src="@{/images/hero-commerce.jpg}" alt="UCOP Smart Commerce & Operations Illustration">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4 Platform Highlights -->
+    <section class="row g-3 mb-5">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 p-3 stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="feature-icon-pill bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">Giao vận Đa kho</div>
+                        <small class="text-muted">Tự tính phí theo kg &amp; Tracking</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 p-3 stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="feature-icon-pill" style="background: #f3e8ff; color: #7e22ce;">
+                        <i class="bi bi-calendar2-check"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">Lịch hẹn Dịch vụ</div>
+                        <small class="text-muted">Đặt lịch chuyên gia tận nơi</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 p-3 stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="feature-icon-pill bg-success bg-opacity-10 text-success">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">Ví điện tử UCOP</div>
+                        <small class="text-muted">Thanh toán kết hợp &amp; Hoàn tiền</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 p-3 stat-card">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="feature-icon-pill bg-warning bg-opacity-15 text-warning">
+                        <i class="bi bi-patch-check-fill"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">Bảo hành &amp; RMA</div>
+                        <small class="text-muted">Hoàn tiền Full / Partial minh bạch</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Active Promotions / Voucher Tickets -->
+    <section class="mb-5" th:if="${promotions != null and !promotions.isEmpty()}">
+        <div class="d-flex flex-wrap justify-content-between align-items-end mb-3">
+            <div>
+                <span class="text-danger small fw-bold text-uppercase"><i class="bi bi-fire me-1"></i>Ưu đãi độc quyền</span>
+                <h4 class="fw-bold mb-0">Săn Mã Giảm Giá Hôm Nay</h4>
+            </div>
+            <a th:href="@{/cart}" th:if="${currentUserId != null}" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                Dùng ngay tại Giỏ hàng &rarr;
+            </a>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-4" th:each="p : ${promotions}">
+                <div class="promo-ticket p-3 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-danger fs-6 font-monospace px-3 py-2" th:text="${p.code}">CODE</span>
+                            <span class="badge rounded-pill bg-dark bg-opacity-75"
+                                  th:text="${p.scope.name() == 'ITEM' ? 'Giảm theo Sản phẩm' : 'Giảm toàn Giỏ hàng'}">SCOPE</span>
+                        </div>
+                        <div class="fw-bold text-dark mb-1" th:text="${p.description}">Mô tả</div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center pt-2 mt-2 border-top border-danger border-opacity-10 small">
+                        <span class="text-muted">
+                            Đơn tối thiểu: <strong th:text="${#numbers.formatDecimal(p.minOrderAmount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></strong>
+                        </span>
+                        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3"
+                                th:data-code="${p.code}"
+                                onclick="copyPromoCode(this)">
+                            <i class="bi bi-clipboard-check me-1"></i>Sao chép
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Products & Services Showcase -->
+    <section>
+        <div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+            <div>
+                <span class="text-primary small fw-bold text-uppercase"><i class="bi bi-stars me-1"></i>Danh mục tiêu biểu</span>
+                <h4 class="fw-bold mb-0">Sản Phẩm Vật Lý &amp; Gói Dịch Vụ Nổi Bật</h4>
+            </div>
+            <div class="d-flex gap-2">
+                <a th:href="@{/items(itemType='PHYSICAL')}" class="btn btn-sm btn-outline-primary rounded-pill px-3">Hàng vật lý</a>
+                <a th:href="@{/items(itemType='SERVICE')}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Gói dịch vụ</a>
+                <a th:href="@{/items}" class="btn btn-sm btn-primary rounded-pill px-3">Xem tất cả &rarr;</a>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-sm-6 col-lg-4" th:each="it : ${items}">
+                <div class="product-card h-100 d-flex flex-column">
+                    <a th:href="@{/items/detail/{id}(id=${it.id})}" class="product-img-wrap d-block text-decoration-none">
+                        <span class="badge rounded-pill floating-badge-left shadow-sm"
+                              th:classappend="${it.itemType.name() == 'PHYSICAL' ? 'badge-physical' : 'badge-service'}"
+                              th:text="${it.itemType.name() == 'PHYSICAL' ? '📦 Hàng vật lý' : '📅 Dịch vụ / Lịch hẹn'}"></span>
+                        <span class="badge rounded-pill bg-dark bg-opacity-75 text-white floating-badge-right font-monospace"
+                              th:text="${it.sku}">SKU</span>
+                        <img th:src="@{${it.displayImageUrl}}" th:alt="${it.name}" loading="lazy">
+                    </a>
+
+                    <div class="p-3 p-md-4 d-flex flex-column flex-grow-1">
+                        <div class="small text-primary fw-semibold mb-1"
+                             th:text="${it.category != null ? it.category.name : 'Chưa phân loại'}">Danh mục</div>
+                        <h5 class="fw-bold mb-2 fs-6">
+                            <a th:href="@{/items/detail/{id}(id=${it.id})}"
+                               class="text-decoration-none text-dark stretched-link-title" th:text="${it.name}">Tên SP</a>
+                        </h5>
+                        <p class="small text-secondary flex-grow-1 mb-3" th:text="${it.description}">Mô tả</p>
+
+                        <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                            <div>
+                                <div class="fw-extrabold text-primary fs-5"
+                                     th:text="${#numbers.formatDecimal(it.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</div>
+                                <small class="text-muted" th:text="'Đơn vị: ' + ${it.unit}"></small>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <a th:href="@{/items/detail/{id}(id=${it.id})}" class="btn btn-light border btn-sm rounded-pill px-2.5" title="Xem chi tiết">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <form th:action="@{/cart/add}" method="post">
+                                    <input type="hidden" name="itemId" th:value="${it.id}">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold">
+                                        <i class="bi bi-cart-plus me-1"></i>Mua ngay
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+    function copyPromoCode(btn) {
+        const code = btn.getAttribute('data-code');
+        navigator.clipboard.writeText(code);
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Đã chép ' + code;
+        btn.classList.replace('btn-danger', 'btn-success');
+        setTimeout(() => {
+            btn.innerHTML = oldHtml;
+            btn.classList.replace('btn-success', 'btn-danger');
+        }, 1800);
+    }
+</script>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

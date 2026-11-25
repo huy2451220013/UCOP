@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Chi tiết Đơn hàng ' + ${order.orderCode})}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container my-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+            <a th:href="@{/orders}" class="text-decoration-none small">&larr; Danh sách đơn hàng</a>
+            <h4 class="fw-bold mb-0 mt-1">
+                Đơn hàng <span class="text-primary font-monospace" th:text="${order.orderCode}"></span>
+                <span class="badge ms-2 fs-6"
+                      th:classappend="${order.status.name() == 'PAID' or order.status.name() == 'DELIVERED' or order.status.name() == 'CLOSED' ? 'bg-success' :
+                                       (order.status.name() == 'CANCELED' or order.status.name() == 'REFUNDED' ? 'bg-danger' : 'bg-primary')}"
+                      th:text="${order.status}"></span>
+            </h4>
+        </div>
+        <div class="d-flex gap-2">
+            <a th:if="${order.status.name() == 'PLACED' or order.status.name() == 'PENDING_PAYMENT'}"
+               th:href="@{/payment/checkout/{id}(id=${order.id})}" class="btn btn-success">
+                <i class="bi bi-credit-card me-1"></i>Tiến hành Thanh toán
+            </a>
+            <a th:if="${payment != null}" th:href="@{/payment/invoice/{pid}(pid=${payment.id})}" class="btn btn-outline-dark">
+                <i class="bi bi-printer me-1"></i>Xem / In Hóa đơn
+            </a>
+        </div>
+    </div>
+
+    <!-- Lifecycle Progress Info -->
+    <div class="alert alert-light border small mb-4">
+        <strong>Vòng đời đơn hàng chuẩn UCOP:</strong>
+        <code>CART &rarr; PLACED &rarr; PENDING_PAYMENT &rarr; PAID &rarr; PACKED &rarr; SHIPPED &rarr; DELIVERED &rarr; CLOSED</code>
+        (Nhánh ngoại lệ: <code>CANCELED</code>, <code>RMA_REQUESTED &rarr; REFUNDED</code>)
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column: Items + Shipments + Appointments -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header py-3">Chi tiết Sản phẩm &amp; Dịch vụ trong đơn</div>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>SKU / Tên</th>
+                            <th>Loại</th>
+                            <th>Đơn giá</th>
+                            <th>SL</th>
+                            <th>Giảm SP</th>
+                            <th class="text-end">Thành tiền</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="oi : ${order.orderItems}">
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <img th:src="@{${oi.item.displayImageUrl}}" th:alt="${oi.item.name}" class="thumb-xs">
+                                    <div>
+                                        <div class="fw-semibold" th:text="${oi.item.name}">SP</div>
+                                        <code class="small" th:text="${oi.item.sku}">SKU</code>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge"
+                                      th:classappend="${oi.item.itemType.name() == 'PHYSICAL' ? 'badge-physical' : 'badge-service'}"
+                                      th:text="${oi.item.itemType}"></span>
+                            </td>
+                            <td th:text="${#numbers.formatDecimal(oi.unitPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                            <td th:text="${oi.quantity}"></td>
+                            <td class="text-success" th:text="${#numbers.formatDecimal(oi.itemDiscount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                            <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(oi.lineTotal, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 1-N: Shipments Section (Physical Fulfillment) -->
+            <div class="card mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-truck text-primary me-2"></i>Vận đơn Giao hàng Vật lý (1-N: Order &rarr; Shipment)</span>
+                    <span class="badge bg-secondary" th:text="${shipments.size() + ' vận đơn'}"></span>
+                </div>
+                <div class="card-body">
+                    <div th:if="${shipments.isEmpty()}" class="text-muted small mb-2">Chưa có vận đơn giao hàng cho đơn này.</div>
+                    <div class="table-responsive" th:if="${!shipments.isEmpty()}">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                            <tr>
+                                <th>Mã vận đơn</th>
+                                <th>Đơn vị VC</th>
+                                <th>Dự kiến giao</th>
+                                <th>Trạng thái</th>
+                                <th th:if="${isAdmin or isStaff}">Cập nhật</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="sh : ${shipments}">
+                                <td><code th:text="${sh.trackingNumber}">TRK</code></td>
+                                <td th:text="${sh.carrier}">GHN</td>
+                                <td class="small" th:text="${sh.estimatedDelivery != null ? #temporals.format(sh.estimatedDelivery, 'dd/MM/yyyy') : '-'}"></td>
+                                <td><span class="badge bg-info text-dark" th:text="${sh.status}"></span></td>
+                                <td th:if="${isAdmin or isStaff}">
+                                    <form th:action="@{/orders/shipment/{sid}/status(sid=${sh.id})}" method="post" class="d-flex gap-1">
+                                        <input type="hidden" name="redirectOrderId" th:value="${order.id}">
+                                        <select name="status" class="form-select form-select-sm">
+                                            <option th:each="st : ${ {'PREPARING','IN_TRANSIT','DELIVERED','FAILED'} }"
+                                                    th:value="${st}" th:text="${st}" th:selected="${sh.status == st}"></option>
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-primary">Lưu</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Create Shipment Form for Staff/Admin -->
+                    <form th:if="${(isAdmin or isStaff) and order.status.name() != 'CANCELED'}"
+                          th:action="@{/orders/{id}/shipment(id=${order.id})}" method="post"
+                          class="row g-2 mt-2 pt-2 border-top">
+                        <div class="col-md-4">
+                            <input type="text" name="carrier" class="form-control form-control-sm" placeholder="Đơn vị VC (GiaoHangNhanh, ViettelPost...)" required>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" name="trackingNumber" class="form-control form-control-sm" placeholder="Mã tracking (để trống tự sinh)">
+                        </div>
+                        <div class="col-md-4 d-flex gap-1">
+                            <input type="date" name="estimatedDate" class="form-control form-control-sm">
+                            <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">+ Tạo Vận đơn</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 1-N: Appointments Section (Service Fulfillment) -->
+            <div class="card mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-calendar2-check text-purple me-2"></i>Lịch hẹn Dịch vụ (1-N: Order &rarr; Appointment)</span>
+                    <span class="badge bg-secondary" th:text="${appointments.size() + ' lịch hẹn'}"></span>
+                </div>
+                <div class="card-body">
+                    <div th:if="${appointments.isEmpty()}" class="text-muted small mb-2">Chưa có lịch hẹn dịch vụ cho đơn này.</div>
+                    <div class="table-responsive" th:if="${!appointments.isEmpty()}">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                            <tr>
+                                <th>Dịch vụ</th>
+                                <th>Thời gian hẹn</th>
+                                <th>Địa điểm / Phụ trách</th>
+                                <th>Trạng thái</th>
+                                <th th:if="${isAdmin or isStaff}">Cập nhật</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="ap : ${appointments}">
+                                <td class="fw-semibold" th:text="${ap.serviceName}">DV</td>
+                                <td class="small" th:text="${#temporals.format(ap.appointmentTime, 'dd/MM/yyyy HH:mm')}"></td>
+                                <td class="small">
+                                    <div th:text="${ap.location}"></div>
+                                    <span class="text-muted" th:text="${ap.staffAssigned}"></span>
+                                </td>
+                                <td><span class="badge bg-warning text-dark" th:text="${ap.status}"></span></td>
+                                <td th:if="${isAdmin or isStaff}">
+                                    <form th:action="@{/orders/appointment/{aid}/status(aid=${ap.id})}" method="post" class="d-flex gap-1">
+                                        <input type="hidden" name="redirectOrderId" th:value="${order.id}">
+                                        <select name="status" class="form-select form-select-sm">
+                                            <option th:each="st : ${ {'SCHEDULED','CONFIRMED','COMPLETED','CANCELED'} }"
+                                                    th:value="${st}" th:text="${st}" th:selected="${ap.status == st}"></option>
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-primary">Lưu</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Create Appointment Form for Staff/Admin -->
+                    <form th:if="${(isAdmin or isStaff) and order.status.name() != 'CANCELED'}"
+                          th:action="@{/orders/{id}/appointment(id=${order.id})}" method="post"
+                          class="row g-2 mt-2 pt-2 border-top">
+                        <div class="col-md-6">
+                            <input type="text" name="serviceName" class="form-control form-control-sm" placeholder="Tên gói dịch vụ / Buổi hẹn *" required>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="datetime-local" name="appointmentTime" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="col-md-5">
+                            <input type="text" name="location" class="form-control form-control-sm" placeholder="Địa điểm / Link Online *" required>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" name="staffAssigned" class="form-control form-control-sm" placeholder="Chuyên viên phụ trách">
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-sm btn-outline-success w-100">+ Tạo Lịch hẹn</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Financial Summary, Status Control, Cancel & Refund -->
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header py-3">Thông tin Tài chính &amp; Giao nhận</div>
+                <div class="card-body small">
+                    <div class="mb-2"><strong>Khách hàng:</strong> <span th:text="${order.account.profile != null ? order.account.profile.fullName : order.account.username}"></span></div>
+                    <div class="mb-2"><strong>Địa chỉ nhận:</strong> <span th:text="${order.shippingAddress}"></span></div>
+                    <div class="mb-2" th:if="${order.note != null and !order.note.isEmpty()}"><strong>Ghi chú:</strong> <span th:text="${order.note}"></span></div>
+                    <div class="mb-2" th:if="${order.promotionCode != null}"><strong>Mã KM:</strong> <code th:text="${order.promotionCode}"></code></div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Tạm tính:</span>
+                        <span th:text="${#numbers.formatDecimal(order.subtotal, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1 text-success">
+                        <span>Tổng giảm giá:</span>
+                        <span th:text="'-' + ${#numbers.formatDecimal(order.discountAmount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Thuế VAT (10%):</span>
+                        <span th:text="${#numbers.formatDecimal(order.taxAmount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Phí vận chuyển:</span>
+                        <span th:text="${#numbers.formatDecimal(order.shippingFee, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+                    <div class="d-flex justify-content-between fw-bold fs-6 pt-2 border-top text-primary">
+                        <span>Tổng giá trị đơn:</span>
+                        <span th:text="${#numbers.formatDecimal(order.grandTotal, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                    </div>
+
+                    <div th:if="${payment != null}" class="mt-3 p-2 bg-light rounded border">
+                        <div><strong>Phương thức TT:</strong> <span th:text="${payment.method}"></span></div>
+                        <div><strong>Trạng thái TT:</strong> <span class="badge bg-success" th:text="${payment.status}"></span></div>
+                        <div th:if="${payment.walletUsed.doubleValue() > 0}">
+                            <strong>Đã trừ Ví UCOP:</strong>
+                            <span th:text="${#numbers.formatDecimal(payment.walletUsed, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Staff/Admin Update Order Status -->
+            <div class="card mb-3" th:if="${isAdmin or isStaff}">
+                <div class="card-header py-2 bg-warning bg-opacity-10">
+                    <i class="bi bi-gear me-1"></i>Cập nhật Trạng thái Đơn (Staff/Admin)
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/orders/{id}/status(id=${order.id})}" method="post" class="d-flex gap-2">
+                        <select name="status" class="form-select form-select-sm">
+                            <option th:each="st : ${allStatuses}" th:value="${st}" th:text="${st}"
+                                    th:selected="${order.status == st}"></option>
+                        </select>
+                        <button type="submit" class="btn btn-warning btn-sm fw-semibold text-nowrap">Cập nhật</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Cancel Order -->
+            <div class="card mb-3"
+                 th:if="${order.status.name() == 'PLACED' or order.status.name() == 'PENDING_PAYMENT' or ((isAdmin or isStaff) and order.status.name() != 'CANCELED' and order.status.name() != 'DELIVERED')}">
+                <div class="card-body">
+                    <h6 class="fw-bold text-danger small"><i class="bi bi-x-octagon me-1"></i>Hủy Đơn hàng &amp; Giải phóng Tồn kho</h6>
+                    <form th:action="@{/orders/{id}/cancel(id=${order.id})}" method="post"
+                          onsubmit="return confirm('Xác nhận hủy đơn hàng này?');">
+                        <input type="text" name="reason" class="form-control form-control-sm mb-2" placeholder="Lý do hủy đơn..." required>
+                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">Hủy đơn hàng</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- SV4: Request Full / Partial Refund -->
+            <div class="card mb-3" th:if="${payment != null and payment.status.name() == 'COMPLETED'}">
+                <div class="card-header py-2">
+                    <i class="bi bi-arrow-counterclockwise text-danger me-1"></i>Yêu cầu Hoàn tiền (Full / Partial Refund)
+                </div>
+                <div class="card-body small">
+                    <form th:action="@{/payment/refund/request}" method="post">
+                        <input type="hidden" name="orderId" th:value="${order.id}">
+                        <div class="mb-2">
+                            <label class="form-label mb-1 fw-semibold">Hình thức hoàn</label>
+                            <select name="refundType" class="form-select form-select-sm">
+                                <option value="FULL">Hoàn tiền Toàn phần (FULL)</option>
+                                <option value="PARTIAL">Hoàn tiền Một phần (PARTIAL)</option>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label mb-1 fw-semibold">Số tiền yêu cầu hoàn (VNĐ)</label>
+                            <input type="number" name="amount" class="form-control form-control-sm"
+                                   th:value="${payment.grandTotal.longValue()}" min="1000" th:max="${payment.grandTotal.longValue()}" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label mb-1 fw-semibold">Lý do hoàn tiền (RMA) *</label>
+                            <input type="text" name="reason" class="form-control form-control-sm" placeholder="Sản phẩm lỗi / Đổi lịch dịch vụ..." required>
+                        </div>
+                        <button type="submit" class="btn btn-danger btn-sm w-100">Gửi yêu cầu Hoàn về Ví UCOP</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Existing Refunds on Order -->
+            <div class="card" th:if="${refunds != null and !refunds.isEmpty()}">
+                <div class="card-header py-2">Lịch sử Hoàn tiền của đơn</div>
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item" th:each="rf : ${refunds}">
+                        <div class="d-flex justify-content-between">
+                            <strong th:text="${rf.refundType + ' - ' + #numbers.formatDecimal(rf.amount, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></strong>
+                            <span class="badge"
+                                  th:classappend="${rf.status == 'APPROVED' ? 'bg-success' : (rf.status == 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark')}"
+                                  th:text="${rf.status}"></span>
+                        </div>
+                        <div class="text-muted" th:text="${rf.reason}"></div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

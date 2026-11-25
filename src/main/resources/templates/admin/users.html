@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Quản lý Tài khoản & Phân quyền RBAC')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main class="container my-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="bi bi-people-fill text-primary me-2"></i>SV1: Quản lý Người dùng &amp; Phân quyền RBAC</h4>
+            <small class="text-muted">Tạo tài khoản, gán quyền (ADMIN / STAFF / CUSTOMER), Khóa / Mở khóa tài khoản</small>
+        </div>
+        <a th:href="@{/admin/audit}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-journal-code me-1"></i>Xem Audit Log
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <!-- Create User Form -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header py-3">
+                    <i class="bi bi-person-plus text-success me-2"></i>Tạo Tài khoản mới
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/admin/users/create}" method="post">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Username *</label>
+                            <input type="text" name="username" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Mật khẩu *</label>
+                            <input type="password" name="password" class="form-control form-control-sm" minlength="6" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Họ và tên *</label>
+                            <input type="text" name="fullName" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Email *</label>
+                            <input type="email" name="email" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Số điện thoại</label>
+                            <input type="text" name="phone" class="form-control form-control-sm">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Vai trò (Role) *</label>
+                            <select name="role" class="form-select form-select-sm">
+                                <option th:each="r : ${allRoles}" th:value="${r}" th:text="${r}"></option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm w-100 fw-semibold">
+                            <i class="bi bi-plus-circle me-1"></i>Tạo Tài khoản
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- User List & Filters -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header py-3">
+                    <form th:action="@{/admin/users}" method="get" class="row g-2 align-items-center">
+                        <div class="col-md-5">
+                            <input type="text" name="keyword" class="form-control form-control-sm"
+                                   placeholder="Tìm theo username, họ tên, email..." th:value="${keyword}">
+                        </div>
+                        <div class="col-md-4">
+                            <select name="role" class="form-select form-select-sm">
+                                <option value="">-- Tất cả vai trò --</option>
+                                <option th:each="r : ${allRoles}" th:value="${r}" th:text="${r}"
+                                        th:selected="${selectedRole == r}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex gap-1">
+                            <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-search"></i> Lọc</button>
+                            <a th:href="@{/admin/users}" class="btn btn-outline-secondary btn-sm">Xóa</a>
+                        </div>
+                    </form>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Tài khoản / Hồ sơ</th>
+                            <th>Vai trò (RBAC)</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="u : ${accounts}">
+                            <td th:text="${u.id}">1</td>
+                            <td>
+                                <div class="fw-bold" th:text="${u.username}">username</div>
+                                <div class="text-muted" th:text="${u.profile != null ? u.profile.fullName : '-'}">Họ tên</div>
+                                <div class="text-muted" th:text="${u.email}">email</div>
+                            </td>
+                            <td>
+                                <form th:action="@{/admin/users/{id}/role(id=${u.id})}" method="post" class="d-flex gap-1">
+                                    <select name="role" class="form-select form-select-sm" style="width: 125px;">
+                                        <option th:each="r : ${allRoles}" th:value="${r}" th:text="${r}"
+                                                th:selected="${u.primaryRoleName == r.name()}"></option>
+                                    </select>
+                                    <button type="submit" class="btn btn-outline-primary btn-sm" title="Lưu quyền">
+                                        <i class="bi bi-check2"></i>
+                                    </button>
+                                </form>
+                            </td>
+                            <td>
+                                <span th:if="${u.status == 'ACTIVE'}" class="badge bg-success">ACTIVE</span>
+                                <span th:if="${u.status != 'ACTIVE'}" class="badge bg-danger">LOCKED</span>
+                            </td>
+                            <td class="text-end">
+                                <form th:action="@{/admin/users/{id}/toggle-lock(id=${u.id})}" method="post" class="d-inline">
+                                    <input type="hidden" name="lock" th:value="${u.status == 'ACTIVE'}">
+                                    <button type="submit" class="btn btn-sm"
+                                            th:classappend="${u.status == 'ACTIVE' ? 'btn-outline-danger' : 'btn-outline-success'}">
+                                        <i class="bi" th:classappend="${u.status == 'ACTIVE' ? 'bi-lock-fill' : 'bi-unlock-fill'}"></i>
+                                        <span th:text="${u.status == 'ACTIVE' ? 'Khóa' : 'Mở khóa'}"></span>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

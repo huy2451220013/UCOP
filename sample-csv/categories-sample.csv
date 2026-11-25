@@ -1,0 +1,3 @@
+Name,Description,ParentName,Active
+"Thiết bị Smart Home","Hệ sinh thái nhà thông minh IoT","",true
+"Cảm biến & Camera AI","Camera và cảm biến an ninh","Thiết bị Smart Home",true

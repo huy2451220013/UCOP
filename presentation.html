@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slide Thuyết Trình Dự Án UCOP - Final Test Java Nâng Cao</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: radial-gradient(circle at top right, #1e3a8a, #0f172a 65%);
+            color: #f8fafc;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+        .deck-topbar {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .slide-stage {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.25rem;
+        }
+        .slide-card {
+            width: 100%;
+            max-width: 1120px;
+            background: rgba(30, 41, 59, 0.82);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 24px;
+            padding: 2.75rem;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+        }
+        .feature-box {
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(56, 189, 248, 0.22);
+            border-radius: 16px;
+            padding: 1.35rem;
+            height: 100%;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .feature-box:hover {
+            transform: translateY(-4px);
+            border-color: #38bdf8;
+        }
+        .notes-panel {
+            background: rgba(14, 165, 233, 0.12);
+            border-left: 4px solid #38bdf8;
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-top: 1.75rem;
+            color: #e2e8f0;
+        }
+        .dot-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 999px;
+            border: none;
+            background: rgba(148, 163, 184, 0.35);
+            transition: all 0.2s ease;
+        }
+        .dot-btn.active {
+            width: 34px;
+            background: #38bdf8;
+        }
+        .arch-arrow {
+            color: #38bdf8;
+            font-size: 1.35rem;
+        }
+    </style>
+</head>
+<body>
+
+<header class="deck-topbar py-2 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-layers-half text-info fs-4"></i>
+        <strong>UCOP PRESENTATION</strong>
+        <span id="badgeNum" class="badge bg-info text-dark ms-2">Slide 1 / 9</span>
+    </div>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <button class="btn btn-sm btn-outline-info" onclick="toggleNotes()" id="btnNotes">
+            <i class="bi bi-mic me-1"></i>Lời dẫn: BẬT
+        </button>
+        <button class="btn btn-sm btn-outline-light" onclick="toggleFullScreen()">
+            <i class="bi bi-arrows-fullscreen me-1"></i>Toàn màn hình
+        </button>
+        <a href="http://localhost:8088" target="_blank" class="btn btn-sm btn-warning fw-semibold">
+            <i class="bi bi-box-arrow-up-right me-1"></i>Mở Web Demo (8088)
+        </a>
+    </div>
+</header>
+
+<main class="slide-stage">
+    <div class="slide-card">
+        <div id="slideRender"></div>
+
+        <div id="speakerBox" class="notes-panel">
+            <div class="small text-info fw-bold text-uppercase mb-1">
+                <i class="bi bi-chat-quote-fill me-1"></i>Gợi ý lời thuyết trình (Speaker Notes):
+            </div>
+            <div id="speakerText" class="small"></div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top border-secondary border-opacity-25">
+            <button class="btn btn-outline-light px-4" onclick="prev()">
+                <i class="bi bi-arrow-left me-1"></i>Slide trước
+            </button>
+            <div id="dotsContainer" class="d-flex align-items-center gap-2"></div>
+            <button class="btn btn-info text-dark fw-bold px-4" onclick="next()">
+                Slide tiếp <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    </div>
+</main>
+
+<script>
+    const deck = [
+        {
+            tag: "ĐỒ ÁN CUỐI KỲ • LẬP TRÌNH JAVA NÂNG CAO",
+            title: "UCOP – Universal Commerce & Operations Platform",
+            sub: "Hệ thống Thương mại & Vận hành Đa ngành chuẩn Kiến trúc 3 Tầng (100 Điểm / 5 Modules)",
+            boxes: [
+                { icon: "bi-cpu", title: "Backend Core", desc: "Java 17+, Spring Boot 3.4 (Spring MVC + Embedded Tomcat cổng 8088), Jakarta Bean Validation." },
+                { icon: "bi-database-check", title: "ORM & Cơ sở dữ liệu", desc: "Hibernate 6 / Spring Data JPA, HikariCP Pool, Microsoft SQL Server (21 bảng NVARCHAR)." },
+                { icon: "bi-bar-chart-steps", title: "Frontend & Trực quan hóa", desc: "Thymeleaf Template Engine (25 trang), Bootstrap 5.3, OpenCSV & 4 biểu đồ động Chart.js." }
+            ],
+            script: "Xin chào thầy/cô và các bạn. Hôm nay em xin trình bày đồ án cuối kỳ môn Lập trình Java Nâng cao: Hệ thống UCOP – Nền tảng Thương mại và Vận hành Đa ngành, xây dựng hoàn chỉnh bằng Spring MVC, Thymeleaf, Hibernate JPA và SQL Server."
+        },
+        {
+            tag: "BÀI TOÁN & ĐẶC TẢ HỆ THỐNG",
+            title: "Vì sao cần nền tảng UCOP?",
+            sub: "Hợp nhất quy trình bán Hàng hóa vật lý và Gói dịch vụ đặt lịch trên cùng một hệ thống",
+            boxes: [
+                { icon: "bi-box-seam", title: "Đa loại hình (Physical & Service)", desc: "Vừa quản lý tồn kho, khối lượng, phí ship cho Hàng vật lý; vừa quản lý lịch hẹn cho Dịch vụ." },
+                { icon: "bi-wallet2", title: "Ví nội bộ & Hoàn tiền khép kín", desc: "Tích hợp Ví UCOP, cho phép thanh toán kết hợp và tự động cộng tiền về Ví khi duyệt Refund." },
+                { icon: "bi-shield-check", title: "Phân quyền RBAC & AuditLog", desc: "Kiểm soát chặt chẽ 3 vai trò ADMIN / STAFF / CUSTOMER và ghi nhật ký mọi thay đổi nhạy cảm." }
+            ],
+            script: "Điểm nổi bật của đề tài UCOP là xử lý đồng thời hai mô hình kinh doanh trên cùng một đơn hàng: sản phẩm vật lý cần kiểm soát kho bãi, vận chuyển và dịch vụ cần lên lịch hẹn chuyên viên, đi kèm ví điện tử nội bộ."
+        },
+        {
+            tag: "KIẾN TRÚC PHẦN MỀM",
+            title: "Kiến trúc Backend 3 Tầng (3-Layer Architecture)",
+            sub: "Phân tách trách nhiệm rõ ràng: Giao diện ↔ Điều hướng ↔ Nghiệp vụ (@Transactional) ↔ Dữ liệu",
+            boxes: [
+                { icon: "bi-diagram-2", title: "1. Presentation / Controller Layer", desc: "13 @Controller + RbacInterceptor nhận HTTP Request, kiểm tra Session/Role và trả về View Thymeleaf." },
+                { icon: "bi-gear-wide-connected", title: "2. Business Service Layer", desc: "9 @Service gắn @Transactional xử lý tính thuế, phí, giữ chỗ kho; tự động Rollback khi có lỗi." },
+                { icon: "bi-hdd-stack", title: "3. Repository / DAO Layer", desc: "18 Spring Data JPA Repositories giao tiếp với 20 class @Entity ánh xạ thành 21 bảng SQL Server." }
+            ],
+            script: "Backend của dự án được tổ chức theo đúng kiến trúc 3 tầng chuẩn doanh nghiệp: tầng Controller điều phối luồng HTTP, tầng Service đóng gói toàn bộ quy tắc tính toán trong @Transactional, và tầng Repository đảm nhiệm truy xuất dữ liệu."
+        },
+        {
+            tag: "CƠ CHẾ KẾT NỐI KỸ THUẬT",
+            title: "Backend sử dụng gì để kết nối toàn hệ thống?",
+            sub: "Hai cầu nối cốt lõi: Trình duyệt ↔ Backend Java và Backend Java ↔ SQL Server",
+            boxes: [
+                { icon: "bi-globe2", title: "Cầu nối 1: Trình duyệt ↔ Backend", desc: "Giao thức HTTP (GET/POST) trên Apache Tomcat cổng 8088; dùng HttpSession lưu đăng nhập & Thymeleaf render HTML." },
+                { icon: "bi-layers", title: "Cầu nối 2A: Hibernate ORM / JPA", desc: "Ánh xạ trực tiếp đối tượng Java (@Entity) sang bảng quan hệ (1-1, 1-N, N-N), tự sinh SQL chuẩn NVARCHAR." },
+                { icon: "bi-lightning-charge", title: "Cầu nối 2B: HikariCP + mssql-jdbc", desc: "Hồ kết nối HikariCP giữ sẵn 2–10 kết nối tốc độ cao qua JDBC Driver tới cổng TCP 1433 (database ucop_db)." }
+            ],
+            script: "Về cơ chế kết nối: phía người dùng giao tiếp với Backend qua HTTP trên Tomcat và Thymeleaf; phía cơ sở dữ liệu kết nối từ Java xuống SQL Server thông qua Hibernate ORM, hồ kết nối HikariCP giúp tối ưu tốc độ và mssql-jdbc qua cổng TCP 1433."
+        },
+        {
+            tag: "NGHIỆP VỤ MODULE SV1 & SV2 (40 ĐIỂM)",
+            title: "SV1: Admin & RBAC | SV2: Catalog, CSV & Tồn kho",
+            sub: "Bảo mật tài khoản, Danh mục đa cấp tự tham chiếu & Cảnh báo Low Stock tự động",
+            boxes: [
+                { icon: "bi-person-lock", title: "SV1: Tài khoản & Kiểm toán", desc: "Đăng ký kiểm tra Bean Validation, băm mật khẩu BCrypt, hồ sơ 1-1 AccountProfile, Khóa/Mở TK & AuditLog." },
+                { icon: "bi-filetype-csv", title: "SV2: Danh mục 1-N & CSV", desc: "Danh mục cha – con đa cấp tự tham chiếu; hỗ trợ Import & Export CSV chuẩn UTF-8 cho cả Danh mục & Sản phẩm." },
+                { icon: "bi-boxes", title: "SV2: Đa kho & Low Stock", desc: "Quản lý tồn theo từng Kho (OnHand, Reserved, Available = OnHand - Reserved), tự động cảnh báo đỏ khi chạm ngưỡng." }
+            ],
+            script: "Ở Module 1 và 2: mật khẩu người dùng được mã hóa một chiều bằng BCrypt, mọi thao tác nhạy cảm đều ghi vào AuditLog. Danh mục hỗ trợ phân cấp cha-con, nhập xuất CSV hàng loạt và cảnh báo ngay khi tồn kho khả dụng xuống mức thấp."
+        },
+        {
+            tag: "NGHIỆP VỤ MODULE SV3 (20 ĐIỂM)",
+            title: "SV3: Giỏ hàng, Đơn hàng & Điều phối Kép",
+            sub: "Giữ chỗ tồn kho tức thời khi đặt đơn & Tách luồng thực hiện Hàng vật lý / Dịch vụ",
+            boxes: [
+                { icon: "bi-cart-check", title: "Giỏ hàng & Tạm tính KM", desc: "Tự động lưu SP chọn mua kể cả trước khi đăng nhập, kiểm tra tồn khả dụng và tính nháp giảm giá ngay tại giỏ." },
+                { icon: "bi-arrow-repeat", title: "Vòng đời 11 Trạng thái & Lọc", desc: "PLACED → PAID → PACKED → SHIPPED → DELIVERED → CLOSED (kèm CANCELED / REFUNDED); lọc đa tiêu chí." },
+                { icon: "bi-truck", title: "1-N Shipment & Appointment", desc: "Đơn có hàng vật lý tạo Vận đơn giao hàng (Shipment); đơn có gói dịch vụ tạo Lịch hẹn (Appointment)." }
+            ],
+            script: "Ở Module 3, ngay khi khách bấm Đặt hàng, hệ thống khóa lượng hàng tương ứng vào cột Reserved. Sau khi thanh toán, nhân viên sẽ tạo vận đơn Shipment cho hàng vật lý hoặc tạo lịch hẹn Appointment cho gói dịch vụ."
+        },
+        {
+            tag: "NGHIỆP VỤ MODULE SV4 & SV5 (40 ĐIỂM)",
+            title: "SV4: Thanh toán, Ví, Refund | SV5: Khuyến mãi & Dashboard",
+            sub: "Công thức tài chính tự động hóa 100% & Báo cáo quản trị thời gian thực",
+            boxes: [
+                { icon: "bi-credit-card-2-front", title: "SV4: 4 Kênh TT & Tự tính phí", desc: "COD (+15,000đ), Chuyển khoản, Gateway (+1.5%), Ví UCOP (hoặc trừ kết hợp Ví); tự tính VAT 10% & ship theo kg." },
+                { icon: "bi-arrow-counterclockwise", title: "SV4: Hoàn tiền Full / Partial", desc: "Khách tạo yêu cầu RMA → Nhân viên phê duyệt → Tiền hoàn tự động cộng vào Ví UCOP & xuất Hóa đơn in PDF." },
+                { icon: "bi-pie-chart", title: "SV5: Khuyến mãi & Chart.js", desc: "Mã giảm giá theo SP (ITEM) hoặc Giỏ (CART); Dashboard 4 biểu đồ Chart.js (Doanh thu ngày/tháng, Kênh TT, Trạng thái)." }
+            ],
+            script: "Module 4 tự động tính toán chính xác từ giảm giá cấp sản phẩm, giảm giá giỏ hàng, thuế VAT 10%, phí vận chuyển theo cân nặng đến hoàn tiền một phần hoặc toàn phần về Ví. Module 5 tổng hợp toàn bộ dữ liệu lên 4 biểu đồ Chart.js."
+        },
+        {
+            tag: "LUỒNG HOẠT ĐỘNG END-TO-END",
+            title: "Minh họa 1 Vòng đời Xử lý: Từ nút 'Mua' đến Hóa đơn",
+            sub: "Sự phối hợp xuyên suốt giữa 3 tầng Backend và Cơ sở dữ liệu SQL Server",
+            boxes: [
+                { icon: "bi-1-circle", title: "B1–B2: Trình duyệt → Controller", desc: "Khách bấm Mua (POST /cart/add) → RbacInterceptor kiểm tra phiên → CartController gọi CartService thêm vào giỏ." },
+                { icon: "bi-2-circle", title: "B3–B4: @Transactional → SQL Server", desc: "Khi đặt & thanh toán: OrderService giữ chỗ kho, PaymentService trừ Ví UCOP, Hibernate lưu xuống ucop_db." },
+                { icon: "bi-3-circle", title: "B5: AuditLog & Render Hóa đơn", desc: "Ghi nhận mã giao dịch TXN vào AuditLog và trả về giao diện Hóa đơn bán hàng (payment/invoice) sẵn sàng in." }
+            ],
+            script: "Để thấy rõ toàn bộ kiến trúc vận hành ra sao, đây là luồng 5 bước khi khách hàng bấm Mua: từ HTTP POST đi qua Interceptor, xử lý giao dịch @Transactional tại Service, lưu xuống SQL Server bằng Hibernate và xuất ra hóa đơn."
+        },
+        {
+            tag: "DEMO TRỰC TIẾP & KẾT LUẬN",
+            title: "Kịch bản Demo 3 Vai trò trên cổng 8088",
+            sub: "Sẵn sàng kiểm thử thực tế toàn bộ 5 Modules tại http://localhost:8088",
+            boxes: [
+                { icon: "bi-bag-heart", title: "1. Khách hàng (customer1 / 123456)", desc: "Thêm giỏ hàng → Áp mã IOT20 / UCOP10 → Đặt hàng → Thanh toán kết hợp Ví UCOP → Xem hóa đơn & Gửi hoàn tiền." },
+                { icon: "bi-briefcase", title: "2. Nhân viên (staff / 123456)", desc: "Import/Export CSV → Kiểm tra Low Stock → Tạo Vận đơn GHN & Lịch hẹn dịch vụ → Duyệt hoàn tiền về Ví khách." },
+                { icon: "bi-award", title: "3. Quản trị viên (admin / 123456)", desc: "Theo dõi 4 biểu đồ Dashboard doanh thu → Tạo mới / Đổi quyền / Khóa User → Đối soát lịch sử AuditLog." }
+            ],
+            script: "Phần trình bày tổng quan kiến trúc và nghiệp vụ của em đến đây là hoàn tất. Tiếp theo em xin mở trực tiếp hệ thống đang chạy tại localhost:8088 để demo thực tế trên 3 vai trò. Em xin cảm ơn thầy/cô và rất mong nhận được câu hỏi ạ!"
+        }
+    ];
+
+    let cur = 0;
+    let notesVisible = true;
+
+    function renderSlide() {
+        const s = deck[cur];
+        document.getElementById('badgeNum').textContent = `Slide ${cur + 1} / ${deck.length}`;
+        document.getElementById('speakerText').textContent = s.script;
+        document.getElementById('speakerBox').style.display = notesVisible ? 'block' : 'none';
+        document.getElementById('btnNotes').innerHTML = `<i class="bi bi-mic me-1"></i>Lời dẫn: ${notesVisible ? 'BẬT' : 'TẮT'}`;
+
+        const cols = s.boxes.map(b => `
+            <div class="col-md-4">
+                <div class="feature-box">
+                    <div class="text-info fs-3 mb-2"><i class="bi ${b.icon}"></i></div>
+                    <h5 class="fw-bold text-white mb-2">${b.title}</h5>
+                    <p class="small text-light opacity-75 mb-0 lh-lg">${b.desc}</p>
+                </div>
+            </div>
+        `).join('');
+
+        document.getElementById('slideRender').innerHTML = `
+            <div class="text-info small fw-bold letter-spacing-1 mb-2">${s.tag}</div>
+            <h1 class="display-6 fw-bold text-white mb-2">${s.title}</h1>
+            <p class="text-light opacity-75 mb-4">${s.sub}</p>
+            <div class="row g-3">${cols}</div>
+        `;
+
+        document.getElementById('dotsContainer').innerHTML = deck.map((_, i) => `
+            <button class="dot-btn ${i === cur ? 'active' : ''}" onclick="jump(${i})" title="Slide ${i + 1}"></button>
+        `).join('');
+    }
+
+    function prev() { cur = (cur - 1 + deck.length) % deck.length; renderSlide(); }
+    function next() { cur = (cur + 1) % deck.length; renderSlide(); }
+    function jump(i) { cur = i; renderSlide(); }
+    function toggleNotes() { notesVisible = !notesVisible; renderSlide(); }
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
+    }
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+    });
+
+    renderSlide();
+</script>
+</body>
+</html>
